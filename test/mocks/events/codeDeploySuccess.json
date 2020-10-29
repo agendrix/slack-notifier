@@ -1,0 +1,18 @@
+{
+  "version": "0",
+  "id": "d852b55d-a96a-e396-2e34-107bc39d1e21",
+  "detail-type": "CodeDeploy Deployment State-change Notification",
+  "source": "aws.codedeploy",
+  "account": "123456789012",
+  "time": "2019-09-27T18:40:32Z",
+  "region": "us-west-2",
+  "resources": ["arn:aws:codedeploy:us-west-2:123456789012:serverless-lambda-test"],
+  "detail": {
+    "region": "us-west-2",
+    "deploymentId": "d-123456789",
+    "instanceGroupId": "1620f6b6-6731-4d93-aa3c-123456789012",
+    "deploymentGroup": "serverless-lambda-test-codedeploy-group",
+    "state": "SUCCESS",
+    "application": "serverless-lambda-test-codedeploy-app"
+  }
+}
