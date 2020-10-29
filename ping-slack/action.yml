@@ -1,0 +1,18 @@
+name: Ping Slack
+description: Send a deployment notification state update to Slack
+inputs:
+  state:
+    description: The current state (from GithubActionsEventState)
+    required: true
+  lambda-url:
+    description: The URL to the related Slack Notifier lambda
+    required: true
+  api-secret:
+    description: The secret handshake to allow communication with the lambda
+    required: true
+  previous-sha:
+    description: For "STARTED" state, the sha version of the currently running app
+    required: false
+runs:
+  using: node12
+  main: dist/index.js
