@@ -13,7 +13,7 @@ variable "slack_url" {
   type        = string
 
   validation {
-    condition     = regex(".*\\.slack\\.com", var.slack_url)
+    condition     = substr(var.slack_url, length(var.slack_url) - 10, 10) == ".slack.com"
     error_message = "The slack_url is invalid."
   }
 }
