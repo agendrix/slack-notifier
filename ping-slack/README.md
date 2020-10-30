@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Ping Slack
-        uses: agendrix/slack-notifier/ping-slack@main
+        uses: agendrix/slack-notifier/ping-slack@v1.0.0
         with:
           state: "STARTED"
           lambda-url: ${{ secrets.SLACK_LAMBDA_ENDPOINT }}
@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Ping Slack
-        uses: agendrix/slack-notifier/ping-slack@main
+        uses: agendrix/slack-notifier/ping-slack@v1.0.0
         with:
           state: "DEPLOYING"
           lambda-url: ${{ secrets.SLACK_LAMBDA_ENDPOINT }}
@@ -47,25 +47,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - if: success()
+      - if: ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
         name: Ping Slack for success
-        uses: agendrix/slack-notifier/ping-slack@main
+        uses: agendrix/slack-notifier/ping-slack@v1.0.0
         with:
           state: "SUCCEEDED"
           lambda-url: ${{ secrets.SLACK_LAMBDA_ENDPOINT }}
           api-secret: ${{ secrets.SLACK_API_SECRET }}
 
-      - if: failure()
+      - if: ${{ contains(needs.*.result, 'failure') }}
         name: Ping Slack for failure
-        uses: agendrix/slack-notifier/ping-slack@main
+        uses: agendrix/slack-notifier/ping-slack@v1.0.0
         with:
           state: "FAILED"
           lambda-url: ${{ secrets.SLACK_LAMBDA_ENDPOINT }}
           api-secret: ${{ secrets.SLACK_API_SECRET }}
 
-      - if: cancelled()
+      - if: ${{ contains(needs.*.result, 'cancelled') && !contains(needs.*.result, 'failure') }}
         name: Ping Slack for failure
-        uses: agendrix/slack-notifier/ping-slack@main
+        uses: agendrix/slack-notifier/ping-slack@v1.0.0
         with:
           state: "STOPPED"
           lambda-url: ${{ secrets.SLACK_LAMBDA_ENDPOINT }}
