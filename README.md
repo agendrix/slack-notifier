@@ -32,7 +32,7 @@ If you want to get notifications for a GitHub Actions deployment, append this to
 
 ```terraform
 module "gh_slack_notifications" {
-  source = "git@github.com:agendrix/slack-notifier.git//terraform?ref=main"
+  source = "git@github.com:agendrix/slack-notifier.git//terraform?ref=v1.0.0"
 
   lambda_name   = "gh-actions-slack-notifier"
   slack_channel = "#my-app"
@@ -68,7 +68,7 @@ If you want to get notifications for an AWS CodePipeline deployment, append this
 
 ```terraform
 module "codepipeline_slack_notifications" {
-  source = "git@github.com:agendrix/slack-notifier.git//terraform?ref=main"
+  source = "git@github.com:agendrix/slack-notifier.git//terraform?ref=v1.0.0"
 
   lambda_name   = "codepipeline-slack-notifier"
   slack_channel = "#my-app"
