@@ -1,13 +1,13 @@
 {
   "name": "code-pipeline-slack-notifier",
-  "version": "2.1.0",
+  "version": "1.0.0",
   "description": "",
   "scripts": {
     "test": "mocha -r ts-node/register test/**/*.spec.ts",
     "test:watch": "yarn test --watch --watch-extensions ts",
-    "dist:dependencies": "rm -rf node_modules && yarn install --production && zip -r target/lambda node_modules LICENSE README.md",
-    "dist:lambda": "yarn && yarn tsc && yarn prettier --write dist/**/*.js && (cd dist; zip -r ../target/lambda ./*)",
-    "dist": "mkdir -p target && yarn dist:dependencies && yarn dist:lambda",
+    "dist:dependencies": "rm -rf node_modules && yarn install --production && zip -r terraform/lambda node_modules LICENSE README.md",
+    "dist:lambda": "yarn && yarn tsc && yarn prettier --write dist/**/*.js && (cd dist; zip -r ../terraform/lambda ./*)",
+    "dist": "yarn dist:dependencies && yarn dist:lambda",
     "build-action": "yarn ncc build ping-slack/index.ts -o ping-slack/dist"
   },
   "devDependencies": {
