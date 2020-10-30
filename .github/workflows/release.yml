@@ -17,17 +17,26 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
+      - name: Get release tag
+        id: ref
+        run: |
+          TAG=${REF#"$PREFIX"}
+          echo "::set-output name=tag::$TAG"
+        env:
+          REF: ${{ github.ref }}
+          PREFIX: "refs/tags/"
+
+      - name: Update package.json version
+        run: |
+          tmp=$(mktemp)
+          jq '.version = "${{ steps.ref.outputs.tag }}"' package.json > "$tmp"
+          mv "$tmp" package.json
+
       - name: Build GitHub action
         run: yarn build-action
 
       - name: Build lambda distribution
         run: yarn dist
-
-      - name: Update package.json version
-        run: |
-          tmp=$(mktemp)
-          jq '.version = "${{ github.ref }}"' package.json > "$tmp"
-          mv "$tmp" package.json
 
       - name: Setup GitHub git user
         run: |
@@ -42,5 +51,5 @@ jobs:
 
       - name: Move release tag to latest commit
         run: |
-          git tag --force "${{ github.ref }}" $(git rev-parse HEAD)
+          git tag --force "${{ steps.ref.outputs.tag }}" $(git rev-parse HEAD)
           git push --force --tags
