@@ -1,13 +1,11 @@
 # Contributing
 
-## Publish a new version
+## Publish a new release
 
-```bash
-yarn install
-yarn dist
-```
-
-This will build a new version of the AWS lambda function at [`terraform/lambda.zip`](terraform/lambda.zip).
+- [Create a new release](https://github.com/agendrix/slack-notifier/releases/new)
+- Check `This is a pre-release`
+- A GitHub workflow will run and build the code and update the release.
+- Once the build is completed, publish the release.
 
 ## Testing
 
