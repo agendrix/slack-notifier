@@ -11,6 +11,11 @@ variable "slack_channel" {
 variable "slack_url" {
   description = "Slack URL of your organization workspace"
   type        = string
+
+  validation {
+    condition     = regex(".*\\.slack\\.com", var.slack_url)
+    error_message = "The slack_url is invalid."
+  }
 }
 
 variable "repo" {
