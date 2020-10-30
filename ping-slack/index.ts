@@ -1,8 +1,8 @@
 /// <reference path="../lambda/definitions/app.d.ts" />
 
-import request, { RequestCallback, Response } from "request";
-import core from "@actions/core";
-import github from "@actions/github";
+import { post, RequestCallback, Response } from "request";
+import * as core from "@actions/core";
+import * as github from "@actions/github";
 
 const state = core.getInput("state", { required: true }) as GithubActionsEventState;
 const lambdaUrl = core.getInput("lambda-url", { required: true });
@@ -16,7 +16,7 @@ async function postRequest(json: object) {
       return resolve(response);
     };
 
-    request.post(
+    post(
       lambdaUrl,
       {
         json,
