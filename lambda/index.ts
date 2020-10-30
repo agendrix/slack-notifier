@@ -1,7 +1,7 @@
 import * as aws from "./aws";
 import * as slack from "./slack";
 import { COLORS, PipelineState } from "./constants";
-import { ENV, REPO, API_SECRET, SLACK_CHANNEL } from "./env";
+import { ENV, REPO, API_SECRET, SLACK_CHANNEL, SLACK_URL } from "./env";
 import { getWorkflow as getWorkflowFromSupportedEvent, isSupportedHTTPLambdaRequest } from "./workflows/factory";
 
 let lambdaCallback: LambdaCallback | undefined = undefined;
@@ -90,7 +90,7 @@ async function handler(event: any, _context: any, callback?: LambdaCallback): Pr
               color,
               text: statusText,
               footer: ref
-                ? `<https://agendrix.slack.com/archives/${ref.channel}/p${ref.ts.replace(".", "")}|See details>`
+                ? `<https://${SLACK_URL}/archives/${ref.channel}/p${ref.ts.replace(".", "")}|See details>`
                 : null,
               ts: Date.now(),
             },
