@@ -5,6 +5,8 @@ _Supports GitHub Actions and CodePipeline deployments._
 
 ![Release](https://github.com/agendrix/slack-notifier/workflows/Release/badge.svg) ![Tests](https://github.com/agendrix/slack-notifier/workflows/Tests/badge.svg?branch=main)
 
+![example](./example.png)
+
 ## Setup
 
 First, init the shared module in your [Terraform](https://www.terraform.io/) project:
