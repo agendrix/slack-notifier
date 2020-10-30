@@ -11,7 +11,9 @@ inputs:
     description: The secret handshake to allow communication with the lambda
     required: true
   previous-sha:
-    description: For "STARTED" state, the sha version of the currently running app
+    description: |
+      For "STARTED" state, the sha version of the current running app before the new deployment.
+      This gives a list of changelogs in the Slack message.
     required: false
 runs:
   using: node12
