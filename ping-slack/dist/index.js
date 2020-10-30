@@ -5593,17 +5593,14 @@ nacl.setPRNG = function(fn) {
 "use strict";
 
 /// <reference path="../lambda/definitions/app.d.ts" />
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const request_1 = __importDefault(__webpack_require__(830));
-const core_1 = __importDefault(__webpack_require__(470));
-const github_1 = __importDefault(__webpack_require__(861));
-const state = core_1.default.getInput("state", { required: true });
-const lambdaUrl = core_1.default.getInput("lambda-url", { required: true });
-const bearerToken = core_1.default.getInput("api-secret", { required: true });
-const previousSha = core_1.default.getInput("previous-sha");
+const request_1 = __webpack_require__(830);
+const core = __webpack_require__(470);
+const github = __webpack_require__(861);
+const state = core.getInput("state", { required: true });
+const lambdaUrl = core.getInput("lambda-url", { required: true });
+const bearerToken = core.getInput("api-secret", { required: true });
+const previousSha = core.getInput("previous-sha");
 async function postRequest(json) {
     return new Promise((resolve, reject) => {
         const callBack = (error, response) => {
@@ -5611,7 +5608,7 @@ async function postRequest(json) {
                 return reject(error);
             return resolve(response);
         };
-        request_1.default.post(lambdaUrl, {
+        request_1.post(lambdaUrl, {
             json,
             headers: {
                 "Authorization": `Bearer ${bearerToken}`,
@@ -5624,8 +5621,8 @@ async function run() {
     let payload = {
         source: "github.actions",
         state,
-        githubRunId: github_1.default.context.runId.toString(),
-        githubSha: github_1.default.context.sha,
+        githubRunId: github.context.runId.toString(),
+        githubSha: github.context.sha,
     };
     if (previousSha) {
         payload = Object.assign(Object.assign({}, payload), { previousSha });
