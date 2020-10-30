@@ -1,6 +1,6 @@
 {
-  "name": "code-pipeline-slack-notifier",
-  "version": "1.0.0",
+  "name": "slack-notifier",
+  "version": "0.0.0",
   "description": "",
   "scripts": {
     "test": "mocha -r ts-node/register test/**/*.spec.ts",
