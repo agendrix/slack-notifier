@@ -5,7 +5,7 @@ _Supports GitHub Actions and CodePipeline deployments._
 
 ![Release](https://github.com/agendrix/slack-notifier/workflows/Release/badge.svg) ![Tests](https://github.com/agendrix/slack-notifier/workflows/Tests/badge.svg?branch=main)
 
-![example](./example.png)
+<img alt="Example" src="./example.png" width="700" />
 
 ## Setup
 
