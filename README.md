@@ -3,7 +3,7 @@
 _An AWS Lambda for sending deployment updates to Slack._
 _Supports GitHub Actions and CodePipeline deployments._
 
-![Tests](https://github.com/agendrix/slack-notifier/workflows/Tests/badge.svg?branch=main)
+![Release](https://github.com/agendrix/slack-notifier/workflows/Release/badge.svg) ![Tests](https://github.com/agendrix/slack-notifier/workflows/Tests/badge.svg?branch=main)
 
 ## Setup
 
