@@ -8,21 +8,17 @@ export async function callApi(method: string, options: any): Promise<any> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${SLACK_ACCESS_TOKEN}`
+      "Authorization": `Bearer ${SLACK_ACCESS_TOKEN}`,
     },
-    json: options
+    json: options,
   };
 
-  return new Promise(function(resolve, reject) {
-    request(slackRequest, function(error, res, body) {
-      if (!error && res.statusCode == 200) {
-        if (body.ok) {
-          resolve(body);
-        } else {
-          reject(`Error while calling "${url}":\n${body}`);
-        }
+  return new Promise(function (resolve, reject) {
+    request(slackRequest, function (error, _res, body) {
+      if (!error && body.ok) {
+        resolve(body);
       } else {
-        reject(`Error while calling "${url}":\n${error}`);
+        reject(`Error while calling "${url}":\n${error || body}`);
       }
     });
   });
