@@ -66,6 +66,7 @@ interface S3SavedPipeline {
     ts: number;
     pretext: string;
     text: string;
+    footer?: string;
   };
   initialSlackMessageRef?: {
     channel: string;

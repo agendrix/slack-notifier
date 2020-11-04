@@ -13,7 +13,7 @@ export async function getPipelineCommitSha(event: CodePipelineEvent): Promise<st
     };
     const response = await codePipeline.getPipelineExecution(params).promise();
 
-    return ((response.pipelineExecution?.artifactRevisions || [])[0] || {}).revisionId;
+    return response.pipelineExecution?.artifactRevisions?.[0]?.revisionId;
   } catch (error) {
     if (error.errorType === "PipelineExecutionNotFoundException") {
       await clearPipelineData(event.detail["execution-id"]);

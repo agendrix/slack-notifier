@@ -1,7 +1,7 @@
 import GitHub from "github-api";
 import { GITHUB_TOKEN } from "./env";
 
-type CommitComparison = {
+export type CommitComparison = {
   authorName: string;
   changelog: string[];
   totalCommits: number;

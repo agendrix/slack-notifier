@@ -1,16 +1,6 @@
 locals {
   slack_lambda_zip = "${path.module}/lambda.zip"
 
-  base_variables = {
-    REPO               = jsonencode(var.repo)
-    SLACK_CHANNEL      = var.slack_channel
-    SLACK_URL          = var.slack_url
-    SLACK_ACCESS_TOKEN = var.slack_access_token
-    ENV                = var.environment
-    GITHUB_TOKEN       = var.github_oauth_token
-    S3_BUCKET          = var.shared_module.bucket
-    S3_KEY             = var.lambda_name
-  }
   deployement_type_variables = (var.deployment_type == "CodePipeline") ? {
     PIPELINE_NAME      = var.codepipeline_refs.codepipeline.name
     ECR_REF_REPOSITORY = var.codepipeline_refs.ecr_ref_repository
@@ -30,7 +20,16 @@ resource "aws_lambda_function" "lambda" {
   runtime = "nodejs10.x"
 
   environment {
-    variables = merge(local.base_variables, local.deployement_type_variables)
+    variables = merge({
+      REPO               = jsonencode(var.repo)
+      SLACK_CHANNEL      = var.slack_channel
+      SLACK_URL          = var.slack_url
+      SLACK_ACCESS_TOKEN = var.slack_access_token
+      ENV                = var.environment
+      GITHUB_TOKEN       = var.github_oauth_token
+      S3_BUCKET          = var.shared_module.bucket
+      S3_KEY             = var.lambda_name
+    }, local.deployement_type_variables)
   }
 
   depends_on = [var.shared_module]
