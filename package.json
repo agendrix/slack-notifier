@@ -11,6 +11,7 @@
     "build-action": "yarn ncc build ping-slack/index.ts -o ping-slack/dist"
   },
   "devDependencies": {
+    "@octokit/types": "^5.5.0",
     "@types/mocha": "^7.0.2",
     "@types/node": "^14.11.2",
     "@types/request": "^2.48.5",

@@ -1,4 +1,5 @@
 import GitHub from "github-api";
+import { GitGetRefResponseData, OctokitResponse, ReposCompareCommitsResponseData } from "@octokit/types";
 import { GITHUB_TOKEN } from "./env";
 
 export type CommitComparison = {
@@ -17,7 +18,7 @@ export class GithubWrapper {
   }
 
   async getHeadCommit(): Promise<string> {
-    const ref = await this.repo.getRef(`heads/${this.repoInfo.branch}`);
+    const ref: OctokitResponse<GitGetRefResponseData> = await this.repo.getRef(`heads/${this.repoInfo.branch}`);
     if (ref.status !== 200) {
       throw new Error(
         `Error while fetching latest commit on branch ${this.repoInfo.branch} from ${this.repoInfo.owner}/${this.repoInfo.name}.`
@@ -30,18 +31,21 @@ export class GithubWrapper {
   }
 
   async compareCommits(base: string | undefined, head: string): Promise<CommitComparison> {
-    const compare = await this.repo.compareBranches(base || head, head);
+    const compare: OctokitResponse<ReposCompareCommitsResponseData> = await this.repo.compareBranches(
+      base || head,
+      head
+    );
     if (compare.status !== 200) {
       throw new Error(`Error while fetching changelog from GitHub (${base}...${head}).`);
     }
 
-    const refCommit: any =
+    const refCommit =
       compare.data.commits.length === 0
         ? compare.data.base_commit
         : compare.data.commits[compare.data.commits.length - 1];
     const authorName: string = refCommit.commit.author.name;
 
-    const changelog = compare.data.commits.map((commit: any) => {
+    const changelog = compare.data.commits.map(commit => {
       const commitMessage = commit.commit.message.split("\n")[0];
       const cleanedMessaged = this.replace(this.replace(commitMessage, "<", "«"), ">", "»");
       const commitUrl = commit.html_url;
