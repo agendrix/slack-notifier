@@ -31,7 +31,7 @@ resource "aws_lambda_function" "lambda" {
         url         = var.slack_config.url
         accessToken = var.slack_config.access_token
       })
-      S3 = jsonencode({
+      S3_CONFIG = jsonencode({
         bucket = var.bucket
         key    = var.lambda_name
       })
