@@ -1,15 +1,14 @@
-/// <reference path="../lambda/definitions/app.d.ts" />
-
-/// <reference path="../lambda/definitions/aws.d.ts" />
+/// <reference path="../lambda/app.d.ts" />
 
 import assert from "assert";
+import { APIGatewayEvent } from "aws-lambda";
 
 import "./mocks";
 import { withFakeSlack, FakeSlackCall } from "./mocks/libs/slack";
 import { mock } from "./mocks/libs/constants";
 
 import { __test__ } from "../lambda/index";
-import { PipelineState } from "../lambda/constants";
+import { WorkflowState } from "../lambda/constants";
 import {
   codeDeployInstanceSuccess,
   codeDeploySuccess,
@@ -25,7 +24,7 @@ import {
   githubActionsSucceeded,
 } from "./mocks/events";
 
-const lambdaHandler = __test__.handler;
+const lambdaHandler = (event: any) => __test__.handler(event, null);
 
 // Disable logs
 if (true) {
@@ -33,11 +32,11 @@ if (true) {
   console.error = () => {};
 }
 
-function getExpectedMessage(status: keyof typeof PipelineState) {
+function getExpectedMessage(status: keyof typeof WorkflowState) {
   return __test__.STATE_MESSAGES[status][1];
 }
 
-function assertFirstSlackMessage(call: FakeSlackCall, status: keyof typeof PipelineState, isAnUpdate = false) {
+function assertFirstSlackMessage(call: FakeSlackCall, status: keyof typeof WorkflowState, isAnUpdate = false) {
   assert.strictEqual(call.method, isAnUpdate ? "chat.update" : "chat.postMessage");
   assert.strictEqual(call.options.text, getExpectedMessage(status));
   assert.strictEqual(call.options.channel, mock.slackChannel);
@@ -45,7 +44,7 @@ function assertFirstSlackMessage(call: FakeSlackCall, status: keyof typeof Pipel
   assert.ok(call.options.attachments[0].footer.includes(mock.commits.head.ref));
 }
 
-function assertLastSlackMessage(call: FakeSlackCall, firstCallRef: FakeSlackCall, status: keyof typeof PipelineState) {
+function assertLastSlackMessage(call: FakeSlackCall, firstCallRef: FakeSlackCall, status: keyof typeof WorkflowState) {
   assertFirstSlackMessage(firstCallRef, "started");
 
   assert.strictEqual(call.method, "chat.postMessage");
@@ -59,44 +58,44 @@ function assertLastSlackMessage(call: FakeSlackCall, firstCallRef: FakeSlackCall
 
 describe("exports.handler", () => {
   describe("GitHub Actions", () => {
-    const makeHttpRequest = (githubActionsEvent: any, bearerToken: string | null): HTTPLambdaRequest => {
-      return {
+    const makeHttpRequest = (githubActionsEvent: any, bearerToken: string | null): APIGatewayEvent => {
+      return ({
         headers: {
           "Content-Type": "application/json",
           "Authorization": bearerToken ? `Bearer ${bearerToken}` : null,
         },
         httpMethod: "POST",
         body: JSON.stringify(githubActionsEvent),
-      } as HTTPLambdaRequest;
+      } as any) as APIGatewayEvent;
     };
 
-    const lambdaHandlerAPICall = (event: any, _: undefined) => {
-      return lambdaHandler(makeHttpRequest(event, mock.apiSecret), undefined);
+    const lambdaHandlerAPICall = (event: any) => {
+      return lambdaHandler(makeHttpRequest(event, mock.apiSecret));
     };
 
     it("returns 404 when a pipeline is not found", async () => {
-      const response = await lambdaHandlerAPICall(githubActionsDeploying, undefined);
+      const response = await lambdaHandlerAPICall(githubActionsDeploying);
       assert.strictEqual(response.statusCode, 404);
       assert.strictEqual(response.body, "PipelineData not found");
     });
 
     it("cannot call Slack without the secret token", async () => {
-      const response = await lambdaHandler(makeHttpRequest(githubActionsStarted, null), undefined);
-      assert.strictEqual(response.statusCode, 401);
+      const response = await lambdaHandler(makeHttpRequest(githubActionsStarted, null));
+      assert.strictEqual(response.statusCode, 400);
     });
 
     it("can call Slack with the secret token", async () => {
-      const response = await lambdaHandler(makeHttpRequest(githubActionsStarted, mock.apiSecret), undefined);
+      const response = await lambdaHandler(makeHttpRequest(githubActionsStarted, mock.apiSecret));
       assert.strictEqual(response.statusCode, 204);
     });
 
     it("call Slack multiple times for a complete successful flow", async () => {
       const calls = await withFakeSlack(async () => {
-        await lambdaHandlerAPICall(githubActionsStarted, undefined);
-        await lambdaHandlerAPICall(githubActionsPreMigrations, undefined);
-        await lambdaHandlerAPICall(githubActionsDeploying, undefined);
-        await lambdaHandlerAPICall(githubActionsPostMigrations, undefined);
-        await lambdaHandlerAPICall(githubActionsSucceeded, undefined);
+        await lambdaHandlerAPICall(githubActionsStarted);
+        await lambdaHandlerAPICall(githubActionsPreMigrations);
+        await lambdaHandlerAPICall(githubActionsDeploying);
+        await lambdaHandlerAPICall(githubActionsPostMigrations);
+        await lambdaHandlerAPICall(githubActionsSucceeded);
       });
 
       assert.strictEqual(calls.length, 6);
@@ -114,7 +113,7 @@ describe("exports.handler", () => {
       beforeEach(async () => {
         // Start message from GitHub Actions
         const calls = await withFakeSlack(async () => {
-          await lambdaHandlerAPICall(githubActionsStarted, undefined);
+          await lambdaHandlerAPICall(githubActionsStarted);
         });
 
         assert.strictEqual(calls.length, 1);
@@ -124,7 +123,7 @@ describe("exports.handler", () => {
 
       it("call Slack for stopped deployment", async () => {
         const calls = await withFakeSlack(async () => {
-          await lambdaHandlerAPICall(githubActionsStopped, undefined);
+          await lambdaHandlerAPICall(githubActionsStopped);
         });
 
         assert.strictEqual(calls.length, 2);
@@ -134,7 +133,7 @@ describe("exports.handler", () => {
 
       it("call Slack for failed deployment", async () => {
         const calls = await withFakeSlack(async () => {
-          await lambdaHandlerAPICall(githubActionsFailed, undefined);
+          await lambdaHandlerAPICall(githubActionsFailed);
         });
 
         assert.strictEqual(calls.length, 2);
@@ -146,14 +145,14 @@ describe("exports.handler", () => {
 
   describe("Code Pipeline", () => {
     it("returns 404 when a pipeline is not found", async () => {
-      const response = await lambdaHandler(codeDeploySuccess, undefined);
+      const response = await lambdaHandler(codeDeploySuccess);
       assert.strictEqual(response.statusCode, 404);
       assert.strictEqual(response.body, "PipelineData not found");
     });
 
     it("call Slack for Started event", async () => {
       const calls = await withFakeSlack(async () => {
-        await lambdaHandler(codePipelineStarted, undefined);
+        await lambdaHandler(codePipelineStarted);
       });
 
       assert.strictEqual(calls.length, 1);
@@ -163,8 +162,8 @@ describe("exports.handler", () => {
 
     it("call Slack for Failed event", async () => {
       const calls = await withFakeSlack(async () => {
-        await lambdaHandler(codePipelineStarted, undefined);
-        await lambdaHandler(codePipelineFailed, undefined);
+        await lambdaHandler(codePipelineStarted);
+        await lambdaHandler(codePipelineFailed);
       });
 
       assert.strictEqual(calls.length, 3);
@@ -175,7 +174,7 @@ describe("exports.handler", () => {
 
     it("ignores other pipeline events", async () => {
       const calls = await withFakeSlack(async () => {
-        await lambdaHandler(codePipelineSuperseded, undefined);
+        await lambdaHandler(codePipelineSuperseded);
       });
 
       assert.strictEqual(calls.length, 0);
@@ -188,7 +187,7 @@ describe("exports.handler", () => {
     beforeEach(async () => {
       // Start message from CodePipeline
       const calls = await withFakeSlack(async () => {
-        await lambdaHandler(codePipelineStarted, undefined);
+        await lambdaHandler(codePipelineStarted);
       });
 
       assert.strictEqual(calls.length, 1);
@@ -198,7 +197,7 @@ describe("exports.handler", () => {
 
     it("call Slack for Instance Success event", async () => {
       const calls = await withFakeSlack(async () => {
-        await lambdaHandler(codeDeployInstanceSuccess, undefined);
+        await lambdaHandler(codeDeployInstanceSuccess);
       });
 
       assert.strictEqual(calls.length, 1);
@@ -207,7 +206,7 @@ describe("exports.handler", () => {
 
     it("call Slack for Success event", async () => {
       const calls = await withFakeSlack(async () => {
-        await lambdaHandler(codeDeploySuccess, undefined);
+        await lambdaHandler(codeDeploySuccess);
       });
 
       assert.strictEqual(calls.length, 2);
@@ -218,7 +217,7 @@ describe("exports.handler", () => {
 
   it("ignores unsupported event", async () => {
     const calls = await withFakeSlack(async () => {
-      await lambdaHandler({ event: "unsupported" } as any, undefined);
+      await lambdaHandler({ event: "unsupported" } as any);
     });
 
     assert.strictEqual(calls.length, 0);

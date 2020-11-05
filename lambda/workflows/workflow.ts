@@ -1,4 +1,4 @@
-import { PipelineState } from "../constants";
+import { WorkflowState } from "../constants";
 import { GithubWrapper, CommitComparison } from "../github";
 import * as aws from "../aws";
 
@@ -10,13 +10,13 @@ export type ExecutionData = { commitSha: string; executionId: string };
 export abstract class Workflow<SupportedEvent> {
   constructor(protected event: SupportedEvent, protected repo: Repo) {}
   abstract getExecutionUrl(): ExecutionUrl;
-  abstract getExecutionState(): PipelineState | undefined;
+  abstract getExecutionState(): WorkflowState | undefined;
   abstract async getExecutionId(): Promise<string>;
   abstract async getExecutionCommitSha(github: GithubWrapper): Promise<string>;
   abstract async getLatestDeployedCommitSha(): Promise<string | undefined>;
 
   async getSlackMessageData(): Promise<S3SavedPipeline | undefined> {
-    if (this.getExecutionState() === PipelineState.started) {
+    if (this.getExecutionState() === WorkflowState.started) {
       return this.getFirstSlackMessageData();
     }
 

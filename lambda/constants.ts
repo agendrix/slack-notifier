@@ -1,4 +1,4 @@
-export enum PipelineState {
+export enum WorkflowState {
   started = "started",
   preMigration = "preMigration",
   deploying = "deploying",
@@ -6,7 +6,7 @@ export enum PipelineState {
   postMigration = "postMigration",
   finished = "finished",
   stopped = "stopped",
-  failed = "failed"
+  failed = "failed",
 }
 
 export const COLORS = {
@@ -17,5 +17,5 @@ export const COLORS = {
   error: "#FF676A",
   slackGood: "good",
   slackDanger: "danger",
-  slackWarning: "warning"
+  slackWarning: "warning",
 };

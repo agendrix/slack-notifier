@@ -5,10 +5,11 @@
   "scripts": {
     "test": "mocha -r ts-node/register test/**/*.spec.ts",
     "test:watch": "yarn test --watch --watch-extensions ts",
-    "dist:dependencies": "rm -rf node_modules && yarn install --production && zip -r terraform/lambda node_modules LICENSE README.md",
-    "dist:lambda": "yarn && yarn tsc && yarn prettier --write dist/**/*.js && (cd dist; zip -r ../terraform/lambda ./*)",
-    "dist": "yarn dist:dependencies && yarn dist:lambda",
-    "build-action": "yarn ncc build ping-slack/index.ts -o ping-slack/dist"
+    "build-action": "yarn ncc build ping-slack/index.ts -o ping-slack/dist",
+    "build": "rm -rf ./dist && yarn tsc",
+    "postbuild": "cp package.json yarn.lock LICENSE README.md ./dist && cd dist && yarn install --production",
+    "zip": "cd dist && zip -FSr ../terraform/lambda .",
+    "dist": "yarn build && yarn zip"
   },
   "devDependencies": {
     "@octokit/types": "^5.5.0",

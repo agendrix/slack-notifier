@@ -1,4 +1,4 @@
-import { PipelineState } from "../constants";
+import { WorkflowState } from "../constants";
 import { GithubWrapper } from "../github";
 import { ExecutionUrl, Workflow } from "./workflow";
 import * as aws from "../aws";
@@ -41,18 +41,18 @@ export class CodePipelineWorkflow extends Workflow<CodePipelineWorkflowEvent> {
       url: `https://ca-central-1.console.aws.amazon.com/codesuite/codepipeline/pipelines/${this.event.detail.pipeline}/executions/${this.event.detail["execution-id"]}/timeline?region=${this.event.region}`,
     };
   }
-  getExecutionState(): PipelineState | undefined {
+  getExecutionState(): WorkflowState | undefined {
     if (isCodePipelineEvent(this.event)) {
       switch (this.event.detail.state) {
         case "STARTED":
-          return PipelineState.started;
-        case "STOPPED":
-          return PipelineState.stopped;
+          return WorkflowState.started;
+        case "CANCELED":
+        case "STOPPED" as any:
+          return WorkflowState.stopped;
         case "FAILED":
-          return PipelineState.failed;
+          return WorkflowState.failed;
         case "SUCCEEDED": // Ignore Pipeline succeeded as it is handled by CodeDeploy.
         case "SUPERSEDED":
-        case "STOPPING":
         default:
           return undefined;
       }
@@ -60,14 +60,14 @@ export class CodePipelineWorkflow extends Workflow<CodePipelineWorkflowEvent> {
       switch (this.event.detail.state) {
         case "START":
           if (this.event["detail-type"] === "CodeDeploy Deployment State-change Notification") {
-            return PipelineState.deploying;
+            return WorkflowState.deploying;
           }
           break;
         case "SUCCESS":
           if (this.event["detail-type"] === "CodeDeploy Instance State-change Notification") {
-            return PipelineState.waitingForStabilization;
+            return WorkflowState.waitingForStabilization;
           } else if (this.event["detail-type"] === "CodeDeploy Deployment State-change Notification") {
-            return PipelineState.finished;
+            return WorkflowState.finished;
           }
           break;
         case "READY":

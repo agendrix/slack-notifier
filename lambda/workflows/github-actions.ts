@@ -1,14 +1,14 @@
-import { PipelineState } from "../constants";
+import { WorkflowState } from "../constants";
 import { ExecutionUrl, Workflow } from "./workflow";
 
-const GH_ACTIONS_EXECUTION_STATES: { [k in GithubActionsEventState]: PipelineState } = {
-  STARTED: PipelineState.started,
-  PRE_MIGRATIONS: PipelineState.preMigration,
-  DEPLOYING: PipelineState.deploying,
-  POST_MIGRATIONS: PipelineState.postMigration,
-  STOPPED: PipelineState.stopped,
-  FAILED: PipelineState.failed,
-  SUCCEEDED: PipelineState.finished,
+const GH_ACTIONS_EXECUTION_STATES: { [k in GithubActionsEventState]: WorkflowState } = {
+  STARTED: WorkflowState.started,
+  PRE_MIGRATIONS: WorkflowState.preMigration,
+  DEPLOYING: WorkflowState.deploying,
+  POST_MIGRATIONS: WorkflowState.postMigration,
+  STOPPED: WorkflowState.stopped,
+  FAILED: WorkflowState.failed,
+  SUCCEEDED: WorkflowState.finished,
 };
 
 export class GithubActionsWorkflow extends Workflow<GitHubActionsEvent> {
@@ -28,7 +28,7 @@ export class GithubActionsWorkflow extends Workflow<GitHubActionsEvent> {
     };
   }
 
-  getExecutionState(): PipelineState | undefined {
+  getExecutionState(): WorkflowState | undefined {
     return GH_ACTIONS_EXECUTION_STATES[this.event.state];
   }
 
