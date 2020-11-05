@@ -32,6 +32,8 @@ You will need to generate some tokens:
 
 If you want to get notifications for a GitHub Actions deployment, append this to your terraform:
 
+# TODO: Cleanup
+
 ```terraform
 module "gh_slack_notifications" {
   source = "git@github.com:agendrix/slack-notifier.git//terraform?ref=v1.0.0"

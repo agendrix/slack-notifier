@@ -66,11 +66,6 @@ variable "github_oauth_token" {
   default     = null
 }
 
-variable "shared_module" {
-  description = "Shared module from ./shared"
-  type        = any # module
-}
-
 variable "bucket" {
   description = "S3 bucket to save lambda data"
   type        = any # aws_s3_bucket

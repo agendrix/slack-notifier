@@ -14,7 +14,7 @@ locals {
 resource "aws_lambda_function" "lambda" {
   filename      = local.slack_lambda_zip
   function_name = var.lambda_name
-  role          = var.shared_module.role_arn
+  role          = var.role_arn
   handler       = "index.handler"
 
   source_code_hash = filebase64sha256(local.slack_lambda_zip)
@@ -32,13 +32,13 @@ resource "aws_lambda_function" "lambda" {
         accessToken = var.slack_config.access_token
       })
       S3 = jsonencode({
-        bucket = var.shared_module.bucket
+        bucket = var.bucket
         key    = var.lambda_name
       })
     }, local.deployement_type_variables)
   }
 
-  depends_on = [var.shared_module]
+  depends_on = [var.bucket]
 }
 
 resource "aws_cloudwatch_log_group" "log_group" {
