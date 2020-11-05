@@ -7,13 +7,17 @@ _Supports GitHub Actions and CodePipeline deployments._
 
 <img alt="Example" src="./example.png" width="700" />
 
-## Setup
+## Prerequisites
 
-First, init the shared module in your [Terraform](https://www.terraform.io/) project:
+You need to create a shared S3 bucket and an IAM role.
+Those can be shared across all your instance of the Slack Notifier lambda.
+
+If you prefer, you can use the [prerequisites](./terraform/prerequisites) module to create the bucket and the role with all the right policies.
+To do so, first init the prerequisites module in your [Terraform](https://www.terraform.io/) project:
 
 ```terraform
-module "shared_slack_notifier_module" {
-  source = "git@github.com:agendrix/slack-notifier.git//terraform/shared?ref=main"
+module "slack_notifier_prerequisites" {
+  source = "git@github.com:agendrix/slack-notifier.git//terraform/prerequisites?ref=v1.0.0"
 
   aws_s3_bucket_name  = "slack-deployments-notifications"
   aws_iam_role_name   = "RoleForSlackNotifier"
@@ -32,28 +36,30 @@ You will need to generate some tokens:
 
 If you want to get notifications for a GitHub Actions deployment, append this to your terraform:
 
-# TODO: Cleanup
-
 ```terraform
 module "gh_slack_notifications" {
-  source = "git@github.com:agendrix/slack-notifier.git//terraform?ref=v1.0.0"
+  source      = "git@github.com:agendrix/slack-notifier.git//terraform?ref=v1.0.0"
+  lambda_name = "gh-actions-slack-notifier"
 
-  lambda_name   = "gh-actions-slack-notifier"
-  slack_channel = "#my-app"
-  slack_url     = "my-org.slack.com"
   repo = {
     owner  = "org"
     name   = "example"
     branch = "main"
   }
 
-  deployment_type = "GitHub Actions"
-  api_secret      = var.slack_notifier_secret
+  slack_config = {
+    channel      = "#my-app"
+    url          = "my-org.slack.com"
+    access_token = var.slack_access_token
+  }
 
+  deployment_type    = "GitHub Actions"
+  api_secret         = var.api_secret
   environment        = var.environment
-  slack_access_token = var.slack_access_token
   github_oauth_token = var.github_oauth_token
-  shared_module      = module.shared_slack_notifier_module
+
+  bucket   = module.slack_notifier_prerequisites.bucket
+  role_arn = module.slack_notifier_prerequisites.role_arn
 }
 ```
 
