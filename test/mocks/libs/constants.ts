@@ -1,4 +1,4 @@
-/// <reference path="../../../lambda/definitions/app.d.ts" />
+/// <reference path="../../../lambda/app.d.ts" />
 
 import codePipelineStarted from "../events/codePipelineStarted.json";
 

@@ -1,4 +1,4 @@
-/// <reference path="../lambda/definitions/app.d.ts" />
+/// <reference path="../lambda/app.d.ts" />
 
 import { post, RequestCallback, Response } from "request";
 import * as core from "@actions/core";
@@ -9,7 +9,7 @@ const lambdaUrl = core.getInput("lambda-url", { required: true });
 const bearerToken = core.getInput("api-secret", { required: true });
 const previousSha = core.getInput("previous-sha");
 
-async function postRequest(json: object) {
+async function postRequest(payload: GitHubActionsEvent) {
   return new Promise<Response>((resolve, reject) => {
     const callBack: RequestCallback = (error, response) => {
       if (error) return reject(error);
@@ -19,7 +19,7 @@ async function postRequest(json: object) {
     post(
       lambdaUrl,
       {
-        json,
+        json: payload,
         headers: {
           "Authorization": `Bearer ${bearerToken}`,
           "Content-Type": "application/json",

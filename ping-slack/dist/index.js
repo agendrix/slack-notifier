@@ -5592,7 +5592,7 @@ nacl.setPRNG = function(fn) {
 
 "use strict";
 
-/// <reference path="../lambda/definitions/app.d.ts" />
+/// <reference path="../lambda/app.d.ts" />
 Object.defineProperty(exports, "__esModule", { value: true });
 const request_1 = __webpack_require__(830);
 const core = __webpack_require__(470);
@@ -5601,7 +5601,7 @@ const state = core.getInput("state", { required: true });
 const lambdaUrl = core.getInput("lambda-url", { required: true });
 const bearerToken = core.getInput("api-secret", { required: true });
 const previousSha = core.getInput("previous-sha");
-async function postRequest(json) {
+async function postRequest(payload) {
     return new Promise((resolve, reject) => {
         const callBack = (error, response) => {
             if (error)
@@ -5609,7 +5609,7 @@ async function postRequest(json) {
             return resolve(response);
         };
         request_1.post(lambdaUrl, {
-            json,
+            json: payload,
             headers: {
                 "Authorization": `Bearer ${bearerToken}`,
                 "Content-Type": "application/json",
