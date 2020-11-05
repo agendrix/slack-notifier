@@ -70,3 +70,13 @@ variable "shared_module" {
   description = "Shared module from ./shared"
   type        = any # module
 }
+
+variable "bucket" {
+  description = "S3 bucket to save lambda data"
+  type        = any # aws_s3_bucket
+}
+
+variable "role_arn" {
+  description = "Lambda IAM role"
+  type        = string
+}
