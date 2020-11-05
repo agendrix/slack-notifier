@@ -58,12 +58,13 @@ export abstract class Workflow<SupportedEvent> {
 
     const { title, url } = this.getExecutionUrl();
     const executionId = await this.getExecutionId();
+    const sha = await github.getHeadCommit();
 
     return {
       executionId,
       messageDetails: {
         ts: Date.now(),
-        pretext: `<${url}|${title}>`,
+        pretext: `<${url}|${title}> SHA: ${sha}`,
         ...this.getChangelogText(comparison),
       },
     };
