@@ -62,7 +62,7 @@ declare global {
     };
   }
 
-  type S3SavedPipelines = {
+  type WorkflowData = {
     [index: string]: S3SavedPipeline;
   };
 }

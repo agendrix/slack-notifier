@@ -21,7 +21,7 @@ export abstract class Workflow<SupportedEvent> {
     }
 
     try {
-      const pipelines = await aws.loadPipelines();
+      const pipelines = await aws.loadData();
       return pipelines[await this.getExecutionId()];
     } catch (error) {
       console.error(error);

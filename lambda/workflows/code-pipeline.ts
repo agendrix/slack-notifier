@@ -84,7 +84,7 @@ export class CodePipelineWorkflow extends Workflow<CodePipelineWorkflowEvent> {
       return this.currentExecutionId;
     }
 
-    const pipelines = await aws.loadPipelines();
+    const pipelines = await aws.loadData();
 
     let executionId: string | undefined;
     if (isCodePipelineEvent(this.event)) {

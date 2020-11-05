@@ -65,7 +65,7 @@ async function handler(event: any, _context: Context | null, callback?: Callback
         attachments: [attachment],
       });
 
-      await aws.savePipelineData(await workflow.getExecutionId(), {
+      await aws.saveItem(await workflow.getExecutionId(), {
         ...pipelineData,
         initialSlackMessageRef: {
           channel: slackResponse.channel,
@@ -99,7 +99,7 @@ async function handler(event: any, _context: Context | null, callback?: Callback
             },
           ],
         });
-        await aws.clearPipelineData(pipelineData.executionId);
+        await aws.removeItem(pipelineData.executionId);
       }
     }
 
