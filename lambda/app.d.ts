@@ -48,7 +48,7 @@ declare global {
     branch: string;
   }
 
-  interface S3SavedPipeline {
+  interface WorkflowItem {
     executionId: string;
     messageDetails: {
       ts: number;
@@ -62,7 +62,23 @@ declare global {
     };
   }
 
-  type S3SavedPipelines = {
-    [index: string]: S3SavedPipeline;
+  type WorkflowData = {
+    [index: string]: WorkflowItem;
+  };
+
+  type SlackConfig = {
+    channel: string;
+    url: string;
+    accessToken: string;
+  };
+
+  type CodepipelineConfig = {
+    pipelineName: string;
+    ecrRefRepository: string;
+  };
+
+  type S3Config = {
+    bucket: string;
+    key: string;
   };
 }

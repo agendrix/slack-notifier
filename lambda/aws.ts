@@ -1,7 +1,37 @@
 import AWS, { CodePipeline } from "aws-sdk";
-import { S3_BUCKET, S3_KEY } from "./env";
+import { S3_CONFIG } from "./env";
 
-const PIPELINES_S3_FILENAME = "pipelines.json";
+const S3_OBJECT = { Bucket: S3_CONFIG.bucket, Key: `${S3_CONFIG.key}/pipelines.json` };
+
+export async function loadData(): Promise<WorkflowData> {
+  const s3 = new AWS.S3();
+
+  try {
+    const response = await s3.getObject(S3_OBJECT).promise();
+
+    return JSON.parse(response.Body?.toString() || "{}");
+  } catch (error) {
+    if (error.code === "NoSuchKey") return {};
+    throw error;
+  }
+}
+
+export async function saveData(items: WorkflowData): Promise<void> {
+  const s3 = new AWS.S3();
+  await s3.upload({ ...S3_OBJECT, Body: JSON.stringify(items) }).promise();
+}
+
+export async function saveItem(executionId: string, data: WorkflowItem): Promise<void> {
+  const items = await loadData();
+  items[executionId] = data;
+  await saveData(items);
+}
+
+export async function removeItem(executionId: string): Promise<void> {
+  const items = await loadData();
+  delete items[executionId];
+  await saveData(items);
+}
 
 export async function getPipelineCommitSha(event: CodePipelineEvent): Promise<string | undefined> {
   const codePipeline = new AWS.CodePipeline();
@@ -16,7 +46,7 @@ export async function getPipelineCommitSha(event: CodePipelineEvent): Promise<st
     return response.pipelineExecution?.artifactRevisions?.[0]?.revisionId;
   } catch (error) {
     if (error.errorType === "PipelineExecutionNotFoundException") {
-      await clearPipelineData(event.detail["execution-id"]);
+      await removeItem(event.detail["execution-id"]);
     }
     throw error;
   }
@@ -46,56 +76,6 @@ export async function getLatestDeployedCommitShaFromECR(ecrRefRepository: string
   }
 }
 
-export async function loadPipelines(): Promise<S3SavedPipelines> {
-  const s3 = new AWS.S3();
-
-  try {
-    const response = await s3
-      .getObject({
-        Bucket: S3_BUCKET,
-        Key: `${S3_KEY}/${PIPELINES_S3_FILENAME}`,
-      })
-      .promise();
-
-    if (!response.Body) return {};
-    try {
-      return JSON.parse(response.Body.toString());
-    } catch (error) {
-      return {};
-    }
-  } catch (error) {
-    if (error.code === "NoSuchKey") {
-      return {};
-    } else {
-      throw error;
-    }
-  }
-}
-
-export async function savePipelines(pipelines: S3SavedPipelines): Promise<void> {
-  const s3 = new AWS.S3();
-
-  await s3
-    .upload({
-      Bucket: S3_BUCKET,
-      Key: `${S3_KEY}/${PIPELINES_S3_FILENAME}`,
-      Body: JSON.stringify(pipelines),
-    })
-    .promise();
-}
-
-export async function savePipelineData(executionId: string, data: S3SavedPipeline): Promise<void> {
-  const pipelines = await loadPipelines();
-  pipelines[executionId] = data;
-  await savePipelines(pipelines);
-}
-
-export async function clearPipelineData(executionId: string): Promise<void> {
-  const pipelines = await loadPipelines();
-  delete pipelines[executionId];
-  await savePipelines(pipelines);
-}
-
 export async function listPipelineActionExecutions(
   pipelineName: string,
   pipelineExecutionId: string
@@ -112,7 +92,7 @@ export async function listPipelineActionExecutions(
     return response.actionExecutionDetails || [];
   } catch (error) {
     if (error.errorType === "PipelineExecutionNotFoundException") {
-      await clearPipelineData(pipelineExecutionId);
+      await removeItem(pipelineExecutionId);
     }
     return [];
   }
@@ -125,7 +105,7 @@ export function getPipelineState(pipelineName: string): Promise<CodePipeline.Get
 
 export async function findPipelineExecutionId(
   pipelineName: string,
-  pipelines: S3SavedPipelines,
+  pipelines: WorkflowData,
   codeDeployExecutionId: string
 ): Promise<string | undefined> {
   console.log("Searching Pipeline ExecutionId...");

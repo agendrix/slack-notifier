@@ -15,13 +15,13 @@ export abstract class Workflow<SupportedEvent> {
   abstract async getExecutionCommitSha(github: GithubWrapper): Promise<string>;
   abstract async getLatestDeployedCommitSha(): Promise<string | undefined>;
 
-  async getSlackMessageData(): Promise<S3SavedPipeline | undefined> {
+  async getSlackMessageData(): Promise<WorkflowItem | undefined> {
     if (this.getExecutionState() === WorkflowState.started) {
       return this.getFirstSlackMessageData();
     }
 
     try {
-      const pipelines = await aws.loadPipelines();
+      const pipelines = await aws.loadData();
       return pipelines[await this.getExecutionId()];
     } catch (error) {
       console.error(error);
@@ -49,7 +49,7 @@ export abstract class Workflow<SupportedEvent> {
     };
   }
 
-  private async getFirstSlackMessageData(): Promise<S3SavedPipeline | undefined> {
+  private async getFirstSlackMessageData(): Promise<WorkflowItem | undefined> {
     const github = new GithubWrapper(this.repo);
 
     const commitSha = await this.getExecutionCommitSha(github);
@@ -58,13 +58,12 @@ export abstract class Workflow<SupportedEvent> {
 
     const { title, url } = this.getExecutionUrl();
     const executionId = await this.getExecutionId();
-    const sha = await github.getHeadCommit();
 
     return {
       executionId,
       messageDetails: {
         ts: Date.now(),
-        pretext: `<${url}|${title}> SHA: ${sha}`,
+        pretext: `<${url}|${title}>`,
         ...this.getChangelogText(comparison),
       },
     };

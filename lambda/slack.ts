@@ -1,5 +1,5 @@
 import request from "request";
-import { SLACK_ACCESS_TOKEN } from "./env";
+import { SLACK_CONFIG } from "./env";
 
 export async function callApi(method: string, options: any): Promise<any> {
   const url = `https://slack.com/api/${method}`;
@@ -8,7 +8,7 @@ export async function callApi(method: string, options: any): Promise<any> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${SLACK_ACCESS_TOKEN}`,
+      "Authorization": `Bearer ${SLACK_CONFIG.accessToken}`,
     },
     json: options,
   };
