@@ -3,21 +3,6 @@ variable "lambda_name" {
   type        = string
 }
 
-variable "slack_channel" {
-  description = "Slack channel to post messages to"
-  type        = string
-}
-
-variable "slack_url" {
-  description = "Slack URL of your organization workspace"
-  type        = string
-
-  validation {
-    condition     = substr(var.slack_url, length(var.slack_url) - 10, 10) == ".slack.com"
-    error_message = "The slack_url is invalid."
-  }
-}
-
 variable "repo" {
   description = "GitHub repository of the project"
   type = object({
@@ -27,9 +12,18 @@ variable "repo" {
   })
 }
 
-variable "shared_module" {
-  description = "Shared module from ./shared"
-  type        = any # module
+variable "slack_config" {
+  description = "Slack configuration"
+  type = object({
+    channel      = string # Slack channel to post messages to
+    url          = string # Slack URL of your organization workspace
+    access_token = string # Access token for the Slack bot
+  })
+
+  validation {
+    condition     = substr(var.slack_config.url, length(var.slack_config.url) - 10, 10) == ".slack.com"
+    error_message = "The slack url is invalid."
+  }
 }
 
 variable "deployment_type" {
@@ -66,13 +60,13 @@ variable "environment" {
   default     = "test"
 }
 
-variable "slack_access_token" {
-  description = "Access token for the Slack bot"
-  type        = string
-}
-
 variable "github_oauth_token" {
   description = "Oauth token to fetch private repos"
   type        = string
   default     = null
+}
+
+variable "shared_module" {
+  description = "Shared module from ./shared"
+  type        = any # module
 }
