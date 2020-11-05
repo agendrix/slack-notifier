@@ -1,6 +1,5 @@
-import GitHub from "github-api";
-import { GitGetRefResponseData, OctokitResponse, ReposCompareCommitsResponseData } from "@octokit/types";
 import { GITHUB_TOKEN } from "./env";
+import { Octokit } from "@octokit/rest";
 
 export type CommitComparison = {
   authorName: string;
@@ -10,33 +9,36 @@ export type CommitComparison = {
 };
 
 export class GithubWrapper {
-  private repo: any;
+  private octokit: Octokit;
 
-  constructor(private repoInfo: Repo) {
-    const gh = new GitHub({ token: GITHUB_TOKEN });
-    this.repo = gh.getRepo(repoInfo.owner, repoInfo.name);
+  constructor(private repo: Repo) {
+    this.octokit = new Octokit({ auth: GITHUB_TOKEN });
   }
 
   async getHeadCommit(): Promise<string> {
-    const ref: OctokitResponse<GitGetRefResponseData> = await this.repo.getRef(`heads/${this.repoInfo.branch}`);
-    if (ref.status !== 200) {
-      throw new Error(
-        `Error while fetching latest commit on branch ${this.repoInfo.branch} from ${this.repoInfo.owner}/${this.repoInfo.name}.`
-      );
+    const branch = await this.octokit.repos.getBranch({
+      branch: this.repo.branch,
+      repo: this.repo.name,
+      owner: this.repo.owner,
+    });
+
+    if (branch.status !== 200) {
+      throw this.makeError(`Error while fetching latest commit on branch ${this.repo.branch}`);
     }
 
-    const sha = ref.data.object.sha;
-    if (!sha) throw new Error(`Head commit not found.\nEvent:\n${JSON.stringify(event)}`);
-    return sha;
+    return branch.data.commit.sha;
   }
 
   async compareCommits(base: string | undefined, head: string): Promise<CommitComparison> {
-    const compare: OctokitResponse<ReposCompareCommitsResponseData> = await this.repo.compareBranches(
-      base || head,
-      head
-    );
+    const compare = await this.octokit.repos.compareCommits({
+      base: base || head,
+      head,
+      owner: this.repo.owner,
+      repo: this.repo.name,
+    });
+
     if (compare.status !== 200) {
-      throw new Error(`Error while fetching changelog from GitHub (${base}...${head}).`);
+      throw this.makeError(`Error while fetching changelog from GitHub (${base}...${head}).`);
     }
 
     const refCommit =
@@ -47,7 +49,7 @@ export class GithubWrapper {
 
     const changelog = compare.data.commits.map(commit => {
       const commitMessage = commit.commit.message.split("\n")[0];
-      const cleanedMessaged = this.replace(this.replace(commitMessage, "<", "«"), ">", "»");
+      const cleanedMessaged = commitMessage.replace(/</g, "«").replace(/>/g, "»");
       const commitUrl = commit.html_url;
       return `<${commitUrl}|${cleanedMessaged}>`;
     });
@@ -60,7 +62,7 @@ export class GithubWrapper {
     };
   }
 
-  private replace(str: string, search: string, replacement: string) {
-    return str.split(search).join(replacement);
+  private makeError(message: string) {
+    return new Error(`${message}\nRepo: ${this.repo.owner}/${this.repo.name}`);
   }
 }
