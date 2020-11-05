@@ -1,14 +1,18 @@
-import GitHub from "github-api";
+import * as Octokit from "@octokit/rest";
 import { mock } from "./constants";
 
-export class MockRepo {
-  async getRef() {
+class MockOctokit {
+  public repos = new MockRepos();
+}
+
+export class MockRepos {
+  async getBranch() {
     return {
       status: 200,
-      data: { object: { sha: mock.commits.head.ref } },
+      data: { commit: { sha: mock.commits.head.ref } },
     };
   }
-  async compareBranches(_base: string, _head: string) {
+  async compareCommits() {
     return {
       status: 200,
       data: {
@@ -21,4 +25,4 @@ export class MockRepo {
   }
 }
 
-GitHub.prototype.getRepo = () => new MockRepo();
+(Octokit.Octokit as any) = MockOctokit;

@@ -9,5 +9,5 @@ process.env.PIPELINE_NAME = mock.pipelineName;
 process.env.API_SECRET = mock.apiSecret;
 
 import "./libs/aws-sdk";
-import "./libs/github-api";
+import "./libs/octokit";
 import "./libs/slack";
