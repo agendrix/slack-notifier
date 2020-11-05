@@ -1,10 +1,11 @@
 import * as aws from "./aws";
 import * as slack from "./slack";
+import { Handler, Callback } from "aws-lambda";
 import { COLORS, PipelineState } from "./constants";
 import { ENV, REPO, API_SECRET, SLACK_CHANNEL, SLACK_URL } from "./env";
 import { getWorkflow as getWorkflowFromSupportedEvent, isSupportedHTTPLambdaRequest } from "./workflows/factory";
 
-let lambdaCallback: LambdaCallback | undefined = undefined;
+let lambdaCallback: Callback<LambdaResponse> | undefined = undefined;
 
 const context = `\`${REPO.branch}\` of ${REPO.name} to *${ENV}*`;
 
@@ -31,7 +32,7 @@ function sendResponse(message: string, statusCode: number): LambdaResponse {
   return response;
 }
 
-async function handler(event: any, _context: any, callback?: LambdaCallback): Promise<LambdaResponse> {
+const handler: Handler<any, LambdaResponse> = async (event: any, _context, callback?) => {
   lambdaCallback = callback;
 
   try {
@@ -105,7 +106,7 @@ async function handler(event: any, _context: any, callback?: LambdaCallback): Pr
     console.error(error);
     return sendResponse("Internal server error", 500);
   }
-}
+};
 
 exports.handler = handler;
 

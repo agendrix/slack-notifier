@@ -52,5 +52,3 @@ type LambdaResponse = {
   body: any;
   isBase64Encoded: boolean;
 };
-
-type LambdaCallback = (arg1: null, response: LambdaResponse) => void;
