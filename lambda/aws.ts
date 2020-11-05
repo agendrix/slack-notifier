@@ -1,7 +1,7 @@
 import AWS, { CodePipeline } from "aws-sdk";
-import { S3_BUCKET, S3_KEY } from "./env";
+import { S3_CONFIG } from "./env";
 
-const S3_OBJECT = { Bucket: S3_BUCKET, Key: `${S3_KEY}/pipelines.json` };
+const S3_OBJECT = { Bucket: S3_CONFIG.bucket, Key: `${S3_CONFIG.key}/pipelines.json` };
 
 export async function loadData(): Promise<WorkflowData> {
   const s3 = new AWS.S3();
@@ -21,7 +21,7 @@ export async function saveData(items: WorkflowData): Promise<void> {
   await s3.upload({ ...S3_OBJECT, Body: JSON.stringify(items) }).promise();
 }
 
-export async function saveItem(executionId: string, data: S3SavedPipeline): Promise<void> {
+export async function saveItem(executionId: string, data: WorkflowItem): Promise<void> {
   const items = await loadData();
   items[executionId] = data;
   await saveData(items);

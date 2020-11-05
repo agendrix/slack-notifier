@@ -15,7 +15,7 @@ export abstract class Workflow<SupportedEvent> {
   abstract async getExecutionCommitSha(github: GithubWrapper): Promise<string>;
   abstract async getLatestDeployedCommitSha(): Promise<string | undefined>;
 
-  async getSlackMessageData(): Promise<S3SavedPipeline | undefined> {
+  async getSlackMessageData(): Promise<WorkflowItem | undefined> {
     if (this.getExecutionState() === WorkflowState.started) {
       return this.getFirstSlackMessageData();
     }
@@ -49,7 +49,7 @@ export abstract class Workflow<SupportedEvent> {
     };
   }
 
-  private async getFirstSlackMessageData(): Promise<S3SavedPipeline | undefined> {
+  private async getFirstSlackMessageData(): Promise<WorkflowItem | undefined> {
     const github = new GithubWrapper(this.repo);
 
     const commitSha = await this.getExecutionCommitSha(github);

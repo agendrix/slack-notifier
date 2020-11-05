@@ -2,7 +2,7 @@ import { WorkflowState } from "../constants";
 import { GithubWrapper } from "../github";
 import { ExecutionUrl, Workflow } from "./workflow";
 import * as aws from "../aws";
-import { ECR_REF_REPOSITORY, PIPELINE_NAME } from "../env";
+import { CODEPIPELINE_CONFIG } from "../env";
 
 function isCodePipelineEvent(event: LambdaSupportedEvent): event is CodePipelineEvent {
   return event.source === "aws.codepipeline";
@@ -26,10 +26,9 @@ export class CodePipelineWorkflow extends Workflow<CodePipelineWorkflowEvent> {
   constructor(event: CodePipelineWorkflowEvent, repo: Repo) {
     super(event, repo);
 
-    if (!ECR_REF_REPOSITORY) throw new Error("ECR_REF_REPOSITORY is required for CodePipeline deployment.");
-    if (!PIPELINE_NAME) throw new Error("PIPELINE_NAME is required for CodePipeline deployment.");
-    this.ecrRefRepository = ECR_REF_REPOSITORY;
-    this.pipelineName = PIPELINE_NAME;
+    if (!CODEPIPELINE_CONFIG) throw new Error("CODEPIPELINE_CONFIG is required for CodePipeline deployment.");
+    this.ecrRefRepository = CODEPIPELINE_CONFIG.ecrRefRepository;
+    this.pipelineName = CODEPIPELINE_CONFIG.pipelineName;
 
     console.log(`Event captured:\ndetailType: ${event["detail-type"]}\nstate: ${event.detail.state}`);
   }

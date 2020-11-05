@@ -1,11 +1,9 @@
-export const REPO = JSON.parse(process.env.REPO as string) as Repo;
-export const SLACK_CHANNEL = process.env.SLACK_CHANNEL as string;
-export const SLACK_URL = process.env.SLACK_URL as string;
-export const SLACK_ACCESS_TOKEN = process.env.SLACK_ACCESS_TOKEN as string;
-export const ECR_REF_REPOSITORY = process.env.ECR_REF_REPOSITORY as string | undefined;
-export const PIPELINE_NAME = process.env.PIPELINE_NAME as string | undefined;
 export const ENV = process.env.ENV as string;
-export const S3_BUCKET = process.env.S3_BUCKET as string;
-export const S3_KEY = process.env.S3_KEY as string;
 export const GITHUB_TOKEN = process.env.GITHUB_TOKEN as string;
+export const REPO = JSON.parse(process.env.REPO as string) as Repo;
+export const SLACK_CONFIG = JSON.parse(process.env.SLACK_CONFIG as string) as SlackConfig;
+export const S3_CONFIG = JSON.parse(process.env.S3_CONFIG as string) as S3Config;
 export const API_SECRET = process.env.API_SECRET as string | undefined;
+export const CODEPIPELINE_CONFIG = process.env.CODEPIPELINE_CONFIG
+  ? (JSON.parse(process.env.CODEPIPELINE_CONFIG) as CodepipelineConfig)
+  : undefined;

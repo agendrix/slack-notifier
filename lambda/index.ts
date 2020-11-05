@@ -2,7 +2,7 @@ import * as aws from "./aws";
 import * as slack from "./slack";
 import { Context, Callback, APIGatewayProxyStructuredResultV2 } from "aws-lambda";
 import { COLORS, WorkflowState } from "./constants";
-import { ENV, REPO, API_SECRET, SLACK_CHANNEL, SLACK_URL } from "./env";
+import { ENV, REPO, API_SECRET, SLACK_CONFIG } from "./env";
 import { getWorkflow as getWorkflowFromSupportedEvent, isSupportedHTTPLambdaRequest } from "./workflows/factory";
 
 type LambdaResponse = APIGatewayProxyStructuredResultV2;
@@ -49,24 +49,26 @@ async function handler(event: any, _context: Context | null, callback?: Callback
     const workflowState = workflow.getExecutionState();
     if (!workflowState) return sendResponse("Unsupported state", 400);
 
-    const pipelineData = await workflow.getSlackMessageData();
-    if (!pipelineData) {
-      console.log(`PipelineData not found.\nEvent:\n${JSON.stringify(event)}`);
-      return sendResponse("PipelineData not found", 404);
+    const data = await workflow.getSlackMessageData();
+    if (!data) {
+      console.log(`Workflow data not found.\nEvent:\n${JSON.stringify(event)}`);
+      return sendResponse("Workflow data not found", 404);
     }
 
     const [color, statusText] = STATE_MESSAGES[workflowState];
-    const attachment = { color, ...pipelineData.messageDetails };
+    const attachment = { color, ...data.messageDetails };
 
     if (workflowState === WorkflowState.started) {
+      console.log("hello", SLACK_CONFIG);
+
       const slackResponse = await slack.callApi("chat.postMessage", {
-        channel: SLACK_CHANNEL,
+        channel: SLACK_CONFIG.channel,
         text: statusText,
         attachments: [attachment],
       });
 
       await aws.saveItem(await workflow.getExecutionId(), {
-        ...pipelineData,
+        ...data,
         initialSlackMessageRef: {
           channel: slackResponse.channel,
           ts: slackResponse.ts,
@@ -75,31 +77,31 @@ async function handler(event: any, _context: Context | null, callback?: Callback
     } else {
       const endingStates = [WorkflowState.finished, WorkflowState.stopped, WorkflowState.failed];
 
-      if (pipelineData.initialSlackMessageRef) {
+      if (data.initialSlackMessageRef) {
         await slack.callApi("chat.update", {
-          channel: pipelineData.initialSlackMessageRef.channel,
-          ts: pipelineData.initialSlackMessageRef.ts,
+          channel: data.initialSlackMessageRef.channel,
+          ts: data.initialSlackMessageRef.ts,
           text: endingStates.includes(workflowState) ? STATE_MESSAGES.started[1] : statusText,
           attachments: [attachment],
         });
       }
 
       if (endingStates.includes(workflowState)) {
-        const ref = pipelineData.initialSlackMessageRef;
+        const ref = data.initialSlackMessageRef;
         await slack.callApi("chat.postMessage", {
-          channel: SLACK_CHANNEL,
+          channel: SLACK_CONFIG.channel,
           attachments: [
             {
               color,
               text: statusText,
               footer: ref
-                ? `<https://${SLACK_URL}/archives/${ref.channel}/p${ref.ts.replace(".", "")}|See details>`
+                ? `<https://${SLACK_CONFIG.url}/archives/${ref.channel}/p${ref.ts.replace(".", "")}|See details>`
                 : null,
               ts: Date.now(),
             },
           ],
         });
-        await aws.removeItem(pipelineData.executionId);
+        await aws.removeItem(data.executionId);
       }
     }
 

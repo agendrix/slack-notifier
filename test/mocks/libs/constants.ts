@@ -15,11 +15,11 @@ type MockedCommit = {
 
 type Mock = {
   commits: { head: MockedCommit; intermediate: MockedCommit; base: MockedCommit };
-  ecrRefRepository: string;
-  pipelineName: string;
   repo: Repo;
-  slackChannel: string;
+  slackConfig: SlackConfig;
+  s3Config: S3Config;
   apiSecret: string;
+  codepipelineConfig: CodepipelineConfig;
 };
 
 const mockCommit = (id: string, ref: string): MockedCommit => ({
@@ -39,13 +39,23 @@ export const mock: Mock = {
     intermediate: mockCommit("Intermediate", "bddfb38c246a869c8028b75de099e9afa6ab68e1"),
     base: mockCommit("Base", "27ff5dc5853918edd19c0522f04ea0f3bf3eb3f4"),
   },
-  ecrRefRepository: "mockEcrRefRepository",
-  pipelineName: codePipelineStarted.detail.pipeline,
   repo: {
     branch: "MockBranch",
     name: "MockRepo",
     owner: "MockOwner",
   },
-  slackChannel: "MockSlackChannel",
+  s3Config: {
+    bucket: "bucket",
+    key: "key",
+  },
+  slackConfig: {
+    channel: "MockSlackChannel",
+    accessToken: "MockAccessToken",
+    url: "MockUrl",
+  },
+  codepipelineConfig: {
+    ecrRefRepository: "mockEcrRefRepository",
+    pipelineName: codePipelineStarted.detail.pipeline,
+  },
   apiSecret: "38ecad74-test-test-test-1d066a531185",
 };

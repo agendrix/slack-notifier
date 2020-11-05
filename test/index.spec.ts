@@ -27,7 +27,7 @@ import {
 const lambdaHandler = (event: any) => __test__.handler(event, null);
 
 // Disable logs
-if (true) {
+if (false) {
   console.log = () => {};
   console.error = () => {};
 }
@@ -39,7 +39,8 @@ function getExpectedMessage(status: keyof typeof WorkflowState) {
 function assertFirstSlackMessage(call: FakeSlackCall, status: keyof typeof WorkflowState, isAnUpdate = false) {
   assert.strictEqual(call.method, isAnUpdate ? "chat.update" : "chat.postMessage");
   assert.strictEqual(call.options.text, getExpectedMessage(status));
-  assert.strictEqual(call.options.channel, mock.slackChannel);
+  assert.strictEqual(call.options.channel, mock.slackConfig.channel);
+
   assert.ok(call.options.attachments[0].footer.includes(mock.commits.base.ref));
   assert.ok(call.options.attachments[0].footer.includes(mock.commits.head.ref));
 }
@@ -49,7 +50,7 @@ function assertLastSlackMessage(call: FakeSlackCall, firstCallRef: FakeSlackCall
 
   assert.strictEqual(call.method, "chat.postMessage");
   assert.strictEqual(call.options.attachments[0].text, getExpectedMessage(status));
-  assert.strictEqual(call.options.channel, mock.slackChannel);
+  assert.strictEqual(call.options.channel, mock.slackConfig.channel);
   assert.ok(
     call.options.attachments[0].footer.includes(`/${firstCallRef.options.channel}/p${firstCallRef.ts}`),
     "Link to the first slack message"
@@ -76,7 +77,7 @@ describe("exports.handler", () => {
     it("returns 404 when a pipeline is not found", async () => {
       const response = await lambdaHandlerAPICall(githubActionsDeploying);
       assert.strictEqual(response.statusCode, 404);
-      assert.strictEqual(response.body, "PipelineData not found");
+      assert.strictEqual(response.body, "Workflow data not found");
     });
 
     it("cannot call Slack without the secret token", async () => {
@@ -147,7 +148,7 @@ describe("exports.handler", () => {
     it("returns 404 when a pipeline is not found", async () => {
       const response = await lambdaHandler(codeDeploySuccess);
       assert.strictEqual(response.statusCode, 404);
-      assert.strictEqual(response.body, "PipelineData not found");
+      assert.strictEqual(response.body, "Workflow data not found");
     });
 
     it("call Slack for Started event", async () => {
