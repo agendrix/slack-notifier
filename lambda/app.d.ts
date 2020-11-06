@@ -48,7 +48,7 @@ declare global {
     name: string;
   }
 
-  interface WorkflowItem {
+  type BaseWorkflowItem = {
     executionId: string;
     messageDetails: {
       ts: number;
@@ -56,11 +56,19 @@ declare global {
       text: string;
       footer?: string;
     };
-    initialSlackMessageRef?: {
+  };
+
+  type WorkflowItem = BaseWorkflowItem & {
+    isSaved: true;
+    slackMessageRef: {
       channel: string;
       ts: string;
     };
-  }
+  };
+
+  type NewWorkflowItem = BaseWorkflowItem & {
+    isSaved: false;
+  };
 
   type WorkflowData = {
     [index: string]: WorkflowItem;

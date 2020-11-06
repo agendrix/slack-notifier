@@ -19,6 +19,8 @@ const STATE_MESSAGES: { [k in keyof typeof WorkflowState]: [color: string, getSt
   failed:                  [COLORS.error,   ref => `Deployment *failed* for ${ref}`],
 };
 
+const ENDING_STATES: WorkflowState[] = [WorkflowState.finished, WorkflowState.stopped, WorkflowState.failed];
+
 let lambdaCallback: Callback<LambdaResponse> | undefined = undefined;
 
 function sendResponse(message: string, statusCode: number): LambdaResponse {
@@ -58,7 +60,7 @@ async function handler(event: any, _context: Context | null, callback?: Callback
     const statusText = getStatusText(contextRef);
     const attachment = { color, ...data.messageDetails };
 
-    if (workflowState === WorkflowState.started) {
+    if (data.isSaved === false) {
       const { channel, ts } = await slack.callApi("chat.postMessage", {
         channel: SLACK_CONFIG.channel,
         text: statusText,
@@ -67,35 +69,35 @@ async function handler(event: any, _context: Context | null, callback?: Callback
 
       await aws.saveItem(await workflow.getExecutionId(), {
         ...data,
-        initialSlackMessageRef: { channel, ts },
+        isSaved: true,
+        slackMessageRef: { channel, ts },
       });
     } else {
-      const endingStates = [WorkflowState.finished, WorkflowState.stopped, WorkflowState.failed];
+      const ts = Date.now();
+      await slack.callApi("chat.update", {
+        channel: data.slackMessageRef.channel,
+        text: statusText,
+        ts,
+        attachments: [attachment],
+      });
 
-      if (data.initialSlackMessageRef) {
-        await slack.callApi("chat.update", {
-          channel: data.initialSlackMessageRef.channel,
-          ts: data.initialSlackMessageRef.ts,
-          text: endingStates.includes(workflowState) ? STATE_MESSAGES.started[1](contextRef) : statusText,
-          attachments: [attachment],
-        });
-      }
-
-      if (endingStates.includes(workflowState)) {
-        const ref = data.initialSlackMessageRef;
+      if (workflowState === WorkflowState.failed) {
+        // Post a second message if the flow failed
+        const ref = data.slackMessageRef;
         await slack.callApi("chat.postMessage", {
           channel: SLACK_CONFIG.channel,
           attachments: [
             {
               color,
               text: statusText,
-              footer: ref
-                ? `<https://${SLACK_CONFIG.url}/archives/${ref.channel}/p${ref.ts.replace(".", "")}|See details>`
-                : null,
-              ts: Date.now(),
+              footer: `<https://${SLACK_CONFIG.url}/archives/${ref.channel}/p${ref.ts.replace(".", "")}|See details>`,
+              ts,
             },
           ],
         });
+      }
+
+      if (ENDING_STATES.includes(workflowState)) {
         await aws.removeItem(data.executionId);
       }
     }

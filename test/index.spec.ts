@@ -27,7 +27,7 @@ import {
 const lambdaHandler = (event: any) => __test__.handler(event, null);
 
 // Disable logs
-if (false) {
+if (true) {
   console.log = () => {};
   console.error = () => {};
 }
@@ -38,7 +38,7 @@ function getExpectedMessage(status: keyof typeof WorkflowState): string {
   return getStatus(contextRef);
 }
 
-function assertFirstSlackMessage(call: FakeSlackCall, status: keyof typeof WorkflowState, isAnUpdate = false) {
+function assertSlackMessage(call: FakeSlackCall, status: keyof typeof WorkflowState, isAnUpdate = false) {
   assert.strictEqual(call.method, isAnUpdate ? "chat.update" : "chat.postMessage");
   assert.strictEqual(call.options.text, getExpectedMessage(status));
   assert.strictEqual(call.options.channel, mock.slackConfig.channel);
@@ -47,9 +47,12 @@ function assertFirstSlackMessage(call: FakeSlackCall, status: keyof typeof Workf
   assert.ok(call.options.attachments[0].footer.includes(mock.commits.head.ref));
 }
 
-function assertLastSlackMessage(call: FakeSlackCall, firstCallRef: FakeSlackCall, status: keyof typeof WorkflowState) {
-  assertFirstSlackMessage(firstCallRef, "started");
-
+function assertSecondSlackMessage(
+  call: FakeSlackCall,
+  firstCallRef: FakeSlackCall,
+  status: keyof typeof WorkflowState
+) {
+  assertSlackMessage(firstCallRef, "started");
   assert.strictEqual(call.method, "chat.postMessage");
   assert.strictEqual(call.options.attachments[0].text, getExpectedMessage(status));
   assert.strictEqual(call.options.channel, mock.slackConfig.channel);
@@ -101,13 +104,12 @@ describe("exports.handler", () => {
         await lambdaHandlerAPICall(githubActionsSucceeded);
       });
 
-      assert.strictEqual(calls.length, 6);
-      assertFirstSlackMessage(calls[0], "started");
-      assertFirstSlackMessage(calls[1], "preMigration", true);
-      assertFirstSlackMessage(calls[2], "deploying", true);
-      assertFirstSlackMessage(calls[3], "postMigration", true);
-      assertFirstSlackMessage(calls[4], "started", true); // Reset first message on finished
-      assertLastSlackMessage(calls[5], calls[0], "finished");
+      assert.strictEqual(calls.length, 5);
+      assertSlackMessage(calls[0], "started");
+      assertSlackMessage(calls[1], "preMigration", true);
+      assertSlackMessage(calls[2], "deploying", true);
+      assertSlackMessage(calls[3], "postMigration", true);
+      assertSlackMessage(calls[4], "finished", true);
     });
 
     describe("Unsuccessful flows", () => {
@@ -120,7 +122,7 @@ describe("exports.handler", () => {
         });
 
         assert.strictEqual(calls.length, 1);
-        assertFirstSlackMessage(calls[0], "started");
+        assertSlackMessage(calls[0], "started");
         firstMessage = calls[0];
       });
 
@@ -129,9 +131,8 @@ describe("exports.handler", () => {
           await lambdaHandlerAPICall(githubActionsStopped);
         });
 
-        assert.strictEqual(calls.length, 2);
-        assertFirstSlackMessage(calls[0], "started", true);
-        assertLastSlackMessage(calls[1], firstMessage, "stopped");
+        assert.strictEqual(calls.length, 1);
+        assertSlackMessage(calls[0], "stopped", true);
       });
 
       it("call Slack for failed deployment", async () => {
@@ -140,8 +141,8 @@ describe("exports.handler", () => {
         });
 
         assert.strictEqual(calls.length, 2);
-        assertFirstSlackMessage(calls[0], "started", true);
-        assertLastSlackMessage(calls[1], firstMessage, "failed");
+        assertSlackMessage(calls[0], "failed", true);
+        assertSecondSlackMessage(calls[1], firstMessage, "failed");
       });
     });
   });
@@ -160,7 +161,7 @@ describe("exports.handler", () => {
 
       assert.strictEqual(calls.length, 1);
       assert.strictEqual(calls[0].method, "chat.postMessage");
-      assertFirstSlackMessage(calls[0], "started");
+      assertSlackMessage(calls[0], "started");
     });
 
     it("call Slack for Failed event", async () => {
@@ -170,9 +171,9 @@ describe("exports.handler", () => {
       });
 
       assert.strictEqual(calls.length, 3);
-      assertFirstSlackMessage(calls[0], "started");
-      assertFirstSlackMessage(calls[1], "started", true);
-      assertLastSlackMessage(calls[2], calls[0], "failed");
+      assertSlackMessage(calls[0], "started");
+      assertSlackMessage(calls[1], "failed", true);
+      assertSecondSlackMessage(calls[2], calls[0], "failed");
     });
 
     it("ignores other pipeline events", async () => {
@@ -194,8 +195,8 @@ describe("exports.handler", () => {
       });
 
       assert.strictEqual(calls.length, 1);
-      assertFirstSlackMessage(calls[0], "started");
       firstMessage = calls[0];
+      assertSlackMessage(firstMessage, "started");
     });
 
     it("call Slack for Instance Success event", async () => {
@@ -204,7 +205,7 @@ describe("exports.handler", () => {
       });
 
       assert.strictEqual(calls.length, 1);
-      assertFirstSlackMessage(calls[0], "waitingForStabilization", true);
+      assertSlackMessage(calls[0], "waitingForStabilization", true);
     });
 
     it("call Slack for Success event", async () => {
@@ -212,9 +213,8 @@ describe("exports.handler", () => {
         await lambdaHandler(codeDeploySuccess);
       });
 
-      assert.strictEqual(calls.length, 2);
-      assertFirstSlackMessage(calls[0], "started", true);
-      assertLastSlackMessage(calls[1], firstMessage, "finished");
+      assert.strictEqual(calls.length, 1);
+      assertSlackMessage(calls[0], "finished", true);
     });
   });
 
