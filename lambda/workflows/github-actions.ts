@@ -21,6 +21,10 @@ export class GithubActionsWorkflow extends Workflow<GitHubActionsEvent> {
     console.log(`Event captured:\ndetailType: GitHub Actions Event\nstate: ${event.state}`);
   }
 
+  getBranchRef(): string {
+    return this.event.githubRef.replace("refs/heads/", "");
+  }
+
   getExecutionUrl(): ExecutionUrl {
     return {
       title: "View Pipeline in GitHub Actions",

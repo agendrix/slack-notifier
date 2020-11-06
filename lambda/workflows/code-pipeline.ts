@@ -22,6 +22,7 @@ export class CodePipelineWorkflow extends Workflow<CodePipelineWorkflowEvent> {
   private currentExecutionId: string | undefined;
   private ecrRefRepository: string;
   private pipelineName: string;
+  private githubBranch: string;
 
   constructor(event: CodePipelineWorkflowEvent, repo: Repo) {
     super(event, repo);
@@ -29,8 +30,13 @@ export class CodePipelineWorkflow extends Workflow<CodePipelineWorkflowEvent> {
     if (!CODEPIPELINE_CONFIG) throw new Error("CODEPIPELINE_CONFIG is required for CodePipeline deployment.");
     this.ecrRefRepository = CODEPIPELINE_CONFIG.ecrRefRepository;
     this.pipelineName = CODEPIPELINE_CONFIG.pipelineName;
+    this.githubBranch = CODEPIPELINE_CONFIG.githubBranch;
 
     console.log(`Event captured:\ndetailType: ${event["detail-type"]}\nstate: ${event.detail.state}`);
+  }
+
+  getBranchRef(): string {
+    return this.githubBranch;
   }
 
   getExecutionUrl(): ExecutionUrl {
@@ -98,7 +104,7 @@ export class CodePipelineWorkflow extends Workflow<CodePipelineWorkflowEvent> {
   }
 
   async getExecutionCommitSha(github: GithubWrapper): Promise<string> {
-    return github.getHeadCommit();
+    return github.getHeadCommit(this.githubBranch);
   }
 
   async getLatestDeployedCommitSha(): Promise<string | undefined> {

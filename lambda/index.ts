@@ -7,21 +7,19 @@ import { getWorkflow as getWorkflowFromSupportedEvent, isSupportedHTTPLambdaRequ
 
 type LambdaResponse = APIGatewayProxyStructuredResultV2;
 
-let lambdaCallback: Callback<LambdaResponse> | undefined = undefined;
-
-const context = `\`${REPO.branch}\` of ${REPO.name} to *${ENV}*`;
-
 // prettier-ignore
-const STATE_MESSAGES: { [k in keyof typeof WorkflowState]: [color: string, status: string] } = {
-  started:                 [COLORS.normal,  `Started deploying ${context}`],
-  preMigration:            [COLORS.info,    `Started deploying ${context} (Pre-migrations)`],
-  deploying:               [COLORS.info,    `Started deploying ${context} (Updating servers)`],
-  waitingForStabilization: [COLORS.info,    `Started deploying ${context} (Waiting for stabilization)`],
-  postMigration:           [COLORS.info,    `Started deploying ${context} (Post-migrations)`],
-  finished:                [COLORS.success, `*Finished* deploying ${context}`],
-  stopped:                 [COLORS.error,   `Deployment *stopped* for ${context}`],
-  failed:                  [COLORS.error,   `Deployment *failed* for ${context}`],
+const STATE_MESSAGES: { [k in keyof typeof WorkflowState]: [color: string, getStatus: (ref: string) => string] } = {
+  started:                 [COLORS.normal,  ref => `Started deploying ${ref}`],
+  preMigration:            [COLORS.info,    ref => `Started deploying ${ref} (Pre-migrations)`],
+  deploying:               [COLORS.info,    ref => `Started deploying ${ref} (Updating servers)`],
+  waitingForStabilization: [COLORS.info,    ref => `Started deploying ${ref} (Waiting for stabilization)`],
+  postMigration:           [COLORS.info,    ref => `Started deploying ${ref} (Post-migrations)`],
+  finished:                [COLORS.success, ref => `*Finished* deploying ${ref}`],
+  stopped:                 [COLORS.error,   ref => `Deployment *stopped* for ${ref}`],
+  failed:                  [COLORS.error,   ref => `Deployment *failed* for ${ref}`],
 };
+
+let lambdaCallback: Callback<LambdaResponse> | undefined = undefined;
 
 function sendResponse(message: string, statusCode: number): LambdaResponse {
   const response: LambdaResponse = {
@@ -55,11 +53,13 @@ async function handler(event: any, _context: Context | null, callback?: Callback
       return sendResponse("Workflow data not found", 404);
     }
 
-    const [color, statusText] = STATE_MESSAGES[workflowState];
+    const contextRef = `\`${workflow.getBranchRef()}\` of *${REPO.name}* to *${ENV}*`;
+    const [color, getStatusText] = STATE_MESSAGES[workflowState];
+    const statusText = getStatusText(contextRef);
     const attachment = { color, ...data.messageDetails };
 
     if (workflowState === WorkflowState.started) {
-      const slackResponse = await slack.callApi("chat.postMessage", {
+      const { channel, ts } = await slack.callApi("chat.postMessage", {
         channel: SLACK_CONFIG.channel,
         text: statusText,
         attachments: [attachment],
@@ -67,10 +67,7 @@ async function handler(event: any, _context: Context | null, callback?: Callback
 
       await aws.saveItem(await workflow.getExecutionId(), {
         ...data,
-        initialSlackMessageRef: {
-          channel: slackResponse.channel,
-          ts: slackResponse.ts,
-        },
+        initialSlackMessageRef: { channel, ts },
       });
     } else {
       const endingStates = [WorkflowState.finished, WorkflowState.stopped, WorkflowState.failed];
@@ -79,7 +76,7 @@ async function handler(event: any, _context: Context | null, callback?: Callback
         await slack.callApi("chat.update", {
           channel: data.initialSlackMessageRef.channel,
           ts: data.initialSlackMessageRef.ts,
-          text: endingStates.includes(workflowState) ? STATE_MESSAGES.started[1] : statusText,
+          text: endingStates.includes(workflowState) ? STATE_MESSAGES.started[1](contextRef) : statusText,
           attachments: [attachment],
         });
       }

@@ -5,6 +5,7 @@ locals {
     CODEPIPELINE_CONFIG = jsonencode({
       pipelineName     = var.codepipeline_refs.codepipeline.name
       ecrRefRepository = var.codepipeline_refs.ecr_ref_repository
+      githubBranch     = var.codepipeline_refs.github_deployment_branch
     })
     } : {
     API_SECRET = var.api_secret

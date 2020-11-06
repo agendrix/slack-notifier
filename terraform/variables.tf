@@ -6,9 +6,8 @@ variable "lambda_name" {
 variable "repo" {
   description = "GitHub repository of the project"
   type = object({
-    owner  = string
-    name   = string
-    branch = string
+    owner = string
+    name  = string
   })
 }
 
@@ -48,6 +47,7 @@ variable "codepipeline_refs" {
   type = object({
     region                      = string # AWS region of the CodePipeline
     account_id                  = string # AWS Account Id
+    github_deployment_branch    = string # Branch used by CodePipeline to deploy the app
     codepipeline                = any    # aws_codepipeline
     codedeploy_deployment_group = any    # aws_codedeploy_deployment_group
     ecr_ref_repository          = any    # Name of the ECR repository to fetch latest deployment from.

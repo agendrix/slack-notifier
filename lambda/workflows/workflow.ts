@@ -9,6 +9,7 @@ export type ExecutionData = { commitSha: string; executionId: string };
 
 export abstract class Workflow<SupportedEvent> {
   constructor(protected event: SupportedEvent, protected repo: Repo) {}
+  abstract getBranchRef(): string;
   abstract getExecutionUrl(): ExecutionUrl;
   abstract getExecutionState(): WorkflowState | undefined;
   abstract async getExecutionId(): Promise<string>;

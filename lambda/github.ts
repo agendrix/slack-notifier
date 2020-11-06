@@ -15,15 +15,15 @@ export class GithubWrapper {
     this.octokit = new Octokit({ auth: GITHUB_TOKEN });
   }
 
-  async getHeadCommit(): Promise<string> {
+  async getHeadCommit(branchName: string): Promise<string> {
     const branch = await this.octokit.repos.getBranch({
-      branch: this.repo.branch,
+      branch: branchName,
       repo: this.repo.name,
       owner: this.repo.owner,
     });
 
     if (branch.status !== 200) {
-      throw this.makeError(`Error while fetching latest commit on branch ${this.repo.branch}`);
+      throw this.makeError(`Error while fetching latest commit on branch ${branchName}`);
     }
 
     return branch.data.commit.sha;

@@ -40,7 +40,6 @@ export const mock: Mock = {
     base: mockCommit("Base", "27ff5dc5853918edd19c0522f04ea0f3bf3eb3f4"),
   },
   repo: {
-    branch: "MockBranch",
     name: "MockRepo",
     owner: "MockOwner",
   },
@@ -56,6 +55,7 @@ export const mock: Mock = {
   codepipelineConfig: {
     ecrRefRepository: "mockEcrRefRepository",
     pipelineName: codePipelineStarted.detail.pipeline,
+    githubBranch: "MockBranch",
   },
   apiSecret: "38ecad74-test-test-test-1d066a531185",
 };

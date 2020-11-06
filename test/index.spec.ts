@@ -32,8 +32,10 @@ if (false) {
   console.error = () => {};
 }
 
-function getExpectedMessage(status: keyof typeof WorkflowState) {
-  return __test__.STATE_MESSAGES[status][1];
+function getExpectedMessage(status: keyof typeof WorkflowState): string {
+  const contextRef = `\`${mock.codepipelineConfig.githubBranch}\` of *${mock.repo.name}* to *${process.env.ENV}*`;
+  const [, getStatus] = __test__.STATE_MESSAGES[status];
+  return getStatus(contextRef);
 }
 
 function assertFirstSlackMessage(call: FakeSlackCall, status: keyof typeof WorkflowState, isAnUpdate = false) {

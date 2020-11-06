@@ -15,6 +15,7 @@ declare global {
     source: "github.actions";
     githubRunId: string;
     githubSha: string;
+    githubRef: string;
     previousSha?: string | undefined;
   }
 
@@ -45,7 +46,6 @@ declare global {
   interface Repo {
     owner: string;
     name: string;
-    branch: string;
   }
 
   interface WorkflowItem {
@@ -75,6 +75,7 @@ declare global {
   type CodepipelineConfig = {
     pipelineName: string;
     ecrRefRepository: string;
+    githubBranch: string;
   };
 
   type S3Config = {
