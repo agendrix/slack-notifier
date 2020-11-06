@@ -5623,6 +5623,7 @@ async function run() {
         state,
         githubRunId: github.context.runId.toString(),
         githubSha: github.context.sha,
+        githubRef: github.context.ref,
     };
     if (previousSha) {
         payload = Object.assign(Object.assign({}, payload), { previousSha });

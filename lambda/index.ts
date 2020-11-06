@@ -58,10 +58,11 @@ async function handler(event: any, _context: Context | null, callback?: Callback
     const contextRef = `\`${workflow.getBranchRef()}\` of *${REPO.name}* to *${ENV}*`;
     const [color, getStatusText] = STATE_MESSAGES[workflowState];
     const statusText = getStatusText(contextRef);
-    const attachment = { color, ...data.messageDetails };
+    const ts = Date.now();
+    const attachment = { color, ts, ...data.messageDetails };
 
     if (data.isSaved === false) {
-      const { channel, ts } = await slack.callApi("chat.postMessage", {
+      const messageRef = await slack.callApi("chat.postMessage", {
         channel: SLACK_CONFIG.channel,
         text: statusText,
         attachments: [attachment],
@@ -70,14 +71,13 @@ async function handler(event: any, _context: Context | null, callback?: Callback
       await aws.saveItem(await workflow.getExecutionId(), {
         ...data,
         isSaved: true,
-        slackMessageRef: { channel, ts },
+        slackMessageRef: { channel: messageRef.channel, ts: messageRef.ts },
       });
     } else {
-      const ts = Date.now();
       await slack.callApi("chat.update", {
         channel: data.slackMessageRef.channel,
         text: statusText,
-        ts,
+        ts: data.slackMessageRef.ts,
         attachments: [attachment],
       });
 

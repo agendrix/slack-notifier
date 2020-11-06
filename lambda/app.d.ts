@@ -51,8 +51,7 @@ declare global {
   type BaseWorkflowItem = {
     executionId: string;
     messageDetails: {
-      ts: number;
-      pretext: string;
+      pretext?: string;
       text: string;
       footer?: string;
     };

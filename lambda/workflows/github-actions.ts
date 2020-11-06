@@ -27,7 +27,7 @@ export class GithubActionsWorkflow extends Workflow<GitHubActionsEvent> {
 
   getExecutionUrl(): ExecutionUrl {
     return {
-      title: "View Pipeline in GitHub Actions",
+      title: "Show Run on GitHub",
       url: `https://github.com/${this.repo.owner}/${this.repo.name}/actions/runs/${this.event.githubRunId}`,
     };
   }

@@ -1,7 +1,7 @@
 import { GITHUB_TOKEN } from "./env";
 import { Octokit } from "@octokit/rest";
 
-export type CommitComparison = {
+type CommitComparison = {
   authorName: string;
   changelog: string[];
   totalCommits: number;

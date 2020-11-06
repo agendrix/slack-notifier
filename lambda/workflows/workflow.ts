@@ -1,5 +1,5 @@
 import { WorkflowState } from "../constants";
-import { GithubWrapper, CommitComparison } from "../github";
+import { GithubWrapper } from "../github";
 import * as aws from "../aws";
 
 const MAX_NUMBER_OF_COMMITS_TO_SHOW = 40;
@@ -34,20 +34,12 @@ export abstract class Workflow<SupportedEvent> {
     return [...changelog.slice(0, MAX_NUMBER_OF_COMMITS_TO_SHOW - 1), `<${compareUrl}|And more...>`].join("\n");
   }
 
-  private getChangelogText({
-    changelog,
-    totalCommits,
-    compareUrl,
-  }: CommitComparison): { text: string; footer?: string } {
-    if (changelog.length === 0) return { text: "No code change" };
+  private getChangelogText(changelog: string[], compareUrl: string): string {
+    if (changelog.length === 0) return "No code change";
 
-    return {
-      text:
-        changelog.length <= MAX_NUMBER_OF_COMMITS_TO_SHOW
-          ? changelog.join("\n")
-          : this.truncateChangelog(changelog, compareUrl),
-      footer: `<${compareUrl}|${totalCommits} new ${totalCommits > 1 ? "commits" : "commit"}>`,
-    };
+    return changelog.length <= MAX_NUMBER_OF_COMMITS_TO_SHOW
+      ? changelog.join("\n")
+      : this.truncateChangelog(changelog, compareUrl);
   }
 
   private async getFirstSlackMessageData(): Promise<NewWorkflowItem | undefined> {
@@ -55,7 +47,7 @@ export abstract class Workflow<SupportedEvent> {
 
     const commitSha = await this.getExecutionCommitSha(github);
     const baseCommit = await this.getLatestDeployedCommitSha();
-    const comparison = await github.compareCommits(baseCommit, commitSha);
+    const { changelog, compareUrl, totalCommits } = await github.compareCommits(baseCommit, commitSha);
 
     const { title, url } = this.getExecutionUrl();
     const executionId = await this.getExecutionId();
@@ -64,9 +56,14 @@ export abstract class Workflow<SupportedEvent> {
       isSaved: false,
       executionId,
       messageDetails: {
-        ts: Date.now(),
-        pretext: `<${url}|${title}>`,
-        ...this.getChangelogText(comparison),
+        // pretext: `<${url}|${title}>`,
+        text: this.getChangelogText(changelog, compareUrl),
+        footer: [
+          ...(totalCommits > 0
+            ? [`<${compareUrl}|${totalCommits} new ${totalCommits > 1 ? "commits" : "commit"}>`]
+            : []),
+          `<${url}|${title}>`,
+        ].join(" | "),
       },
     };
   }
