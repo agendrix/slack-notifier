@@ -43,7 +43,7 @@ export class CodePipelineWorkflow extends Workflow<CodePipelineWorkflowEvent> {
     if (!isCodePipelineEvent(this.event)) throw new Error("Cannot get execution URL from CodeDeploy events.");
     return {
       title: "Show Pipeline on AWS",
-      url: `https://ca-central-1.console.aws.amazon.com/codesuite/codepipeline/pipelines/${this.event.detail.pipeline}/executions/${this.event.detail["execution-id"]}/timeline?region=${this.event.region}`,
+      url: `https://${this.event.region}.console.aws.amazon.com/codesuite/codepipeline/pipelines/${this.event.detail.pipeline}/executions/${this.event.detail["execution-id"]}`,
     };
   }
   getExecutionState(): WorkflowState | undefined {

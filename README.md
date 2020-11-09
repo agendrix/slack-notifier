@@ -17,7 +17,7 @@ To do so, first init the prerequisites module in your [Terraform](https://www.te
 
 ```terraform
 module "slack_notifier_prerequisites" {
-  source = "git@github.com:agendrix/slack-notifier.git//terraform/prerequisites?ref=v1.0.0"
+  source = "git@github.com:agendrix/slack-notifier.git//terraform/prerequisites?ref=v1.0.2"
 
   aws_s3_bucket_name  = "slack-deployments-notifications"
   aws_iam_role_name   = "RoleForSlackNotifier"
@@ -38,7 +38,7 @@ If you want to get notifications for a GitHub Actions deployment, append this to
 
 ```terraform
 module "gh_slack_notifications" {
-  source      = "git@github.com:agendrix/slack-notifier.git//terraform?ref=v1.0.0"
+  source      = "git@github.com:agendrix/slack-notifier.git//terraform?ref=v1.0.2"
   lambda_name = "gh-actions-slack-notifier"
 
   repo = {
@@ -78,7 +78,7 @@ If you want to get notifications for an AWS CodePipeline deployment, append this
 
 ```terraform
 module "codepipeline_slack_notifications" {
-  source = "git@github.com:agendrix/slack-notifier.git//terraform?ref=v1.0.0"
+  source = "git@github.com:agendrix/slack-notifier.git//terraform?ref=v1.0.2"
 
   lambda_name   = "codepipeline-slack-notifier"
   slack_channel = "#my-app"

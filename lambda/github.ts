@@ -1,6 +1,8 @@
 import { GITHUB_TOKEN } from "./env";
 import { Octokit } from "@octokit/rest";
 
+const SHORT_SHA_LENGTH = 7;
+
 type CommitComparison = {
   authorName: string;
   changelog: string[];
@@ -31,8 +33,8 @@ export class GithubWrapper {
 
   async compareCommits(base: string | undefined, head: string): Promise<CommitComparison> {
     const compare = await this.octokit.repos.compareCommits({
-      base: base || head,
-      head,
+      base: (base || head).substr(0, SHORT_SHA_LENGTH),
+      head: head.substr(0, SHORT_SHA_LENGTH),
       owner: this.repo.owner,
       repo: this.repo.name,
     });
