@@ -15,7 +15,7 @@ const STATE_MESSAGES: { [k in keyof typeof WorkflowState]: [color: string, getSt
   waitingForStabilization: [COLORS.info,    ref => `Started deploying ${ref} (Waiting for stabilization)`],
   postMigration:           [COLORS.info,    ref => `Started deploying ${ref} (Post-migrations)`],
   finished:                [COLORS.success, ref => `*Finished* deploying ${ref}`],
-  stopped:                 [COLORS.error,   ref => `Deployment *stopped* for ${ref}`],
+  stopped:                 [COLORS.warning, ref => `Deployment *stopped* for ${ref}`],
   failed:                  [COLORS.error,   ref => `Deployment *failed* for ${ref}`],
 };
 
