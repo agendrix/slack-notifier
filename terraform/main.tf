@@ -17,6 +17,8 @@ resource "aws_lambda_function" "lambda" {
   function_name = var.lambda_name
   role          = var.role_arn
   handler       = "index.handler"
+  memory_size   = var.memory_size
+  timeout       = var.timeout
 
   source_code_hash = filebase64sha256(local.slack_lambda_zip)
 

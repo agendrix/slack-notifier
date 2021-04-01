@@ -75,3 +75,15 @@ variable "role_arn" {
   description = "Lambda IAM role"
   type        = string
 }
+
+variable "memory_size" {
+  description = "Memory size of the lambda"
+  type        = number
+  default     = 128
+}
+
+variable "timeout" {
+  description = "Timeout value for the lambda"
+  type        = number
+  default     = 6
+}

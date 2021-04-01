@@ -1,6 +1,6 @@
 {
   "name": "slack-notifier",
-  "version": "v1.0.2",
+  "version": "v1.0.3",
   "description": "",
   "scripts": {
     "test": "mocha -r ts-node/register test/**/*.spec.ts",
