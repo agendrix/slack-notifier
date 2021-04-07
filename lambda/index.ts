@@ -17,9 +17,10 @@ const STATE_MESSAGES: { [k in keyof typeof WorkflowState]: [color: string, getSt
   finished:                [COLORS.success, ref => `*Finished* deploying ${ref}`],
   stopped:                 [COLORS.warning, ref => `Deployment *stopped* for ${ref}`],
   failed:                  [COLORS.error,   ref => `Deployment *failed* for ${ref}`],
+  skipped:                 [COLORS.warning, ref => `Deployment *skipped* for ${ref}`],
 };
 
-const ENDING_STATES: WorkflowState[] = [WorkflowState.finished, WorkflowState.stopped, WorkflowState.failed];
+const ENDING_STATES: WorkflowState[] = [WorkflowState.finished, WorkflowState.stopped, WorkflowState.failed, WorkflowState.skipped];
 
 let lambdaCallback: Callback<LambdaResponse> | undefined = undefined;
 

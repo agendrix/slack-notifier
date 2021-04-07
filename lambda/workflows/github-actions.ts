@@ -9,6 +9,7 @@ const GH_ACTIONS_EXECUTION_STATES: { [k in GithubActionsEventState]: WorkflowSta
   STOPPED: WorkflowState.stopped,
   FAILED: WorkflowState.failed,
   SUCCEEDED: WorkflowState.finished,
+  SKIPPED: WorkflowState.skipped,
 };
 
 export class GithubActionsWorkflow extends Workflow<GitHubActionsEvent> {

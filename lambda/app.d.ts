@@ -8,7 +8,8 @@ declare global {
     | "POST_MIGRATIONS"
     | "STOPPED"
     | "FAILED"
-    | "SUCCEEDED";
+    | "SUCCEEDED"
+    | "SKIPPED";
 
   interface GitHubActionsEvent {
     state: GithubActionsEventState;

@@ -7,6 +7,7 @@ export enum WorkflowState {
   finished = "finished",
   stopped = "stopped",
   failed = "failed",
+  skipped = "skipped",
 }
 
 export const COLORS = {
