@@ -22,7 +22,7 @@ resource "aws_lambda_function" "lambda" {
 
   source_code_hash = filebase64sha256(local.slack_lambda_zip)
 
-  runtime = "nodejs10.x"
+  runtime = "nodejs14.x"
 
   environment {
     variables = merge({
