@@ -16,5 +16,5 @@ inputs:
       This gives a list of changelogs in the Slack message.
     required: false
 runs:
-  using: node12
+  using: node16
   main: dist/index.js

@@ -29,7 +29,7 @@ jobs:
     needs: [build]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Ping Slack
         uses: agendrix/slack-notifier/ping-slack@v1.0.2
@@ -45,7 +45,7 @@ jobs:
     needs: [build, deploy]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - if: ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
         name: Ping Slack for success
