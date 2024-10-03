@@ -5,7 +5,7 @@
   "scripts": {
     "test": "mocha -r ts-node/register test/**/*.spec.ts",
     "test:watch": "yarn test --watch --watch-extensions ts",
-    "build-action": "yarn ncc build ping-slack/index.ts -o ping-slack/dist",
+    "build-action": "NODE_OPTIONS=--openssl-legacy-provider yarn ncc build ping-slack/index.ts -o ping-slack/dist",
     "build": "rm -rf ./dist && yarn tsc",
     "postbuild": "cp package.json yarn.lock LICENSE README.md ./dist && cd dist && yarn install --production",
     "zip": "cd dist && zip -FSr ../terraform/lambda .",
