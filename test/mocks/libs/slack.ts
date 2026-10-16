@@ -22,6 +22,8 @@ let slackMessages: FakeSlackMessage[] = [];
 let lastTs = 0;
 let pendingConcurrentPost: Omit<FakeSlackMessage, "ts"> | undefined;
 let updatesToDrop = 0;
+let staleOverwrite: ((payload: any) => any) | undefined;
+let isStaleOverwriteArmed = false;
 
 const nextTs = () => {
   lastTs = Math.max(lastTs + 1, Date.now());
@@ -47,18 +49,30 @@ const handlers: { [method: string]: (options: any) => any } = {
     }
     const message = findMessage(options.ts);
     if (message) Object.assign(message, options);
+    if (staleOverwrite) isStaleOverwriteArmed = true;
     return { channel: options.channel, ts: options.ts };
   },
   "chat.delete": options => {
     slackMessages = slackMessages.filter(message => message.ts !== options.ts);
     return { channel: options.channel, ts: options.ts };
   },
-  "conversations.history": options => ({
-    messages: slackMessages
+  "conversations.history": options => {
+    const messages = slackMessages
       .filter(message => message.channel === options.channel && !message.thread_ts)
-      .map(message => (options.include_all_metadata ? message : { ...message, metadata: undefined }))
-      .reverse(),
-  }),
+      .map(message =>
+        options.include_all_metadata ? JSON.parse(JSON.stringify(message)) : { ...message, metadata: undefined }
+      )
+      .reverse();
+    if (isStaleOverwriteArmed && staleOverwrite) {
+      const toStalePayload = staleOverwrite;
+      slackMessages
+        .filter(message => message.metadata)
+        .forEach(message => (message.metadata!.event_payload = toStalePayload(message.metadata!.event_payload)));
+      staleOverwrite = undefined;
+      isStaleOverwriteArmed = false;
+    }
+    return { messages };
+  },
   "users.lookupByEmail": options => {
     if (options.email !== KNOWN_SLACK_USER.email) throw "users_not_found";
     return { user: { id: KNOWN_SLACK_USER.id } };
@@ -86,6 +100,10 @@ export function dropNextUpdates(count: number) {
   updatesToDrop = count;
 }
 
+export function overwriteAfterNextCheck(toStalePayload: (payload: any) => any) {
+  staleOverwrite = toStalePayload;
+}
+
 export function getSlackMessages(): FakeSlackMessage[] {
   return [...slackMessages];
 }
@@ -95,6 +113,8 @@ export function resetFakeSlack() {
   slackMessages = [];
   pendingConcurrentPost = undefined;
   updatesToDrop = 0;
+  staleOverwrite = undefined;
+  isStaleOverwriteArmed = false;
 }
 
 export async function withFakeSlack(functionToCall: () => Promise<void>): Promise<FakeSlackCall[]> {

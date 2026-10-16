@@ -1,6 +1,6 @@
 import * as slack from "./slack";
 import { COLORS } from "./constants";
-import { ENV, REPO, SLACK_CONFIG } from "./env";
+import { ENV, REPO, SETTLE_DELAY_MS, SLACK_CONFIG } from "./env";
 import { GithubWrapper } from "./github";
 
 const EVENT_TYPE = "deployment_group";
@@ -97,6 +97,8 @@ async function listGroupMessages(): Promise<GroupMessage[]> {
 async function findGroupMessage(key: string): Promise<GroupMessage | undefined> {
   return (await listGroupMessages()).find(message => message.payload.key === key);
 }
+
+const waitForOtherWriters = () => new Promise(resolve => setTimeout(resolve, SETTLE_DELAY_MS * (0.5 + Math.random())));
 
 async function findReplacingSha(message: GroupMessage): Promise<string | undefined> {
   const newer = (await listGroupMessages()).find(
@@ -302,7 +304,12 @@ export async function handleDeploymentGroupEvent(event: GitHubActionsEvent): Pro
       ...renderGroupMessage(payload),
     });
 
-    const saved = await findGroupMessage(key);
+    let saved = await findGroupMessage(key);
+    // Slack has no conditional update: an environment that read the message before this write can still overwrite it.
+    if (saved && isChangeSaved(saved.payload, payload, event)) {
+      await waitForOtherWriters();
+      saved = await findGroupMessage(key);
+    }
     if (!saved || isChangeSaved(saved.payload, payload, event)) break;
     message = saved;
   }

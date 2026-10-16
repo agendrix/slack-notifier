@@ -9,6 +9,7 @@ import {
   seedSlackMessage,
   simulateConcurrentPost,
   dropNextUpdates,
+  overwriteAfterNextCheck,
   getSlackMessages,
   resetFakeSlack,
   KNOWN_SLACK_USER,
@@ -36,11 +37,11 @@ const makeEvent = (overrides: Partial<GitHubActionsEvent>): GitHubActionsEvent =
 
 const send = (event: GitHubActionsEvent) =>
   __test__.handler(
-    ({
+    {
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${mock.apiSecret}` },
       httpMethod: "POST",
       body: JSON.stringify(event),
-    } as any) as APIGatewayEvent,
+    } as any as APIGatewayEvent,
     null
   );
 
@@ -130,6 +131,16 @@ describe("Deployment groups", () => {
 
     assert.strictEqual(calls.filter(call => call.method === "chat.update").length, 2);
     assert.ok(bodyOf(onlyGroupMessage()).includes(`*${ENV}* · Post-migrations`));
+  });
+
+  it("writes again when another environment overwrote it right after the check", async () => {
+    await send(makeEvent({}));
+    overwriteAfterNextCheck(({ envs: { [ENV]: _mine, ...others }, ...payload }) => ({ ...payload, envs: others }));
+
+    await send(makeEvent({ state: "SUCCEEDED" }));
+
+    const payload = onlyGroupMessage().metadata!.event_payload as DeploymentGroupPayload;
+    assert.strictEqual(payload.envs[ENV]?.state, "SUCCEEDED");
   });
 
   it("shows a finished deployment in green", async () => {
