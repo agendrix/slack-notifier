@@ -9,7 +9,12 @@ declare global {
     | "STOPPED"
     | "FAILED"
     | "SUCCEEDED"
-    | "SKIPPED";
+    | "SKIPPED"
+    | "RELEASE_PUBLISHED"
+    | "RELEASE_SKIPPED"
+    | "RELEASE_FAILED";
+
+  type DeploymentGroup = "staging" | "production";
 
   interface GitHubActionsEvent {
     state: GithubActionsEventState;
@@ -18,6 +23,11 @@ declare global {
     githubSha: string;
     githubRef: string;
     previousSha?: string | undefined;
+    group?: DeploymentGroup;
+    initiator?: string;
+    initiatorEmail?: string;
+    releaseUrl?: string;
+    releaseName?: string;
   }
 
   interface CodePipelineEvent extends CodePipelineCloudWatchPipelineEvent {}

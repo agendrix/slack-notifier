@@ -8,6 +8,11 @@ const state = core.getInput("state", { required: true }) as GithubActionsEventSt
 const lambdaUrl = core.getInput("lambda-url", { required: true });
 const bearerToken = core.getInput("api-secret", { required: true });
 const previousSha = core.getInput("previous-sha");
+const group = core.getInput("group") as DeploymentGroup | "";
+const initiator = core.getInput("initiator");
+const initiatorEmail = core.getInput("initiator-email");
+const releaseUrl = core.getInput("release-url");
+const releaseName = core.getInput("release-name");
 
 async function postRequest(payload: GitHubActionsEvent) {
   return new Promise<Response>((resolve, reject) => {
@@ -41,6 +46,17 @@ async function run() {
 
   if (previousSha) {
     payload = { ...payload, previousSha };
+  }
+
+  if (group) {
+    payload = {
+      ...payload,
+      group,
+      ...(initiator ? { initiator } : {}),
+      ...(initiatorEmail ? { initiatorEmail } : {}),
+      ...(releaseUrl ? { releaseUrl } : {}),
+      ...(releaseName ? { releaseName } : {}),
+    };
   }
 
   console.log(`Sending state "${payload.state}"`);

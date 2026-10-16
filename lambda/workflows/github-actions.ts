@@ -1,7 +1,7 @@
 import { WorkflowState } from "../constants";
 import { ExecutionUrl, Workflow } from "./workflow";
 
-const GH_ACTIONS_EXECUTION_STATES: { [k in GithubActionsEventState]: WorkflowState } = {
+const GH_ACTIONS_EXECUTION_STATES: { [k in GithubActionsEventState]?: WorkflowState } = {
   STARTED: WorkflowState.started,
   PRE_MIGRATIONS: WorkflowState.preMigration,
   DEPLOYING: WorkflowState.deploying,

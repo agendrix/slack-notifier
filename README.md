@@ -72,6 +72,18 @@ This can be anything. You can simply generate one using `openssl rand -base64 64
 
 Finally, add the GitHub action to your GitHub workflow by following [this example](./ping-slack/README.md).
 
+#### One message for many environments
+
+When several environments deploy the same commit, pass the same `group` input (`staging` or `production`) from each of them.
+They share one Slack message: each environment gets its own line, and the message is edited in place.
+The thread only receives failures, with a mention of the `initiator`.
+
+The lambdas of a group may live in different AWS accounts, so the shared state is kept in the Slack message metadata instead of S3.
+This mode needs:
+
+- `slack_config.channel` set to the channel ID (ex. `C0FUJDYQ5`), not its name, because `conversations.history` only accepts IDs.
+- The Slack bot scopes `channels:history` (to find the shared message) and `users:read.email` (to mention the initiator).
+
 ### CodePipeline
 
 If you want to get notifications for an AWS CodePipeline deployment, append this to your terraform:

@@ -3,7 +3,12 @@ import * as slack from "./slack";
 import { Context, Callback, APIGatewayProxyStructuredResultV2 } from "aws-lambda";
 import { COLORS, WorkflowState } from "./constants";
 import { ENV, REPO, API_SECRET, SLACK_CONFIG } from "./env";
-import { getWorkflow as getWorkflowFromSupportedEvent, isSupportedHTTPLambdaRequest } from "./workflows/factory";
+import { handleDeploymentGroupEvent } from "./deployment-group";
+import {
+  getDeploymentGroupEvent,
+  getWorkflow as getWorkflowFromSupportedEvent,
+  isSupportedHTTPLambdaRequest,
+} from "./workflows/factory";
 
 type LambdaResponse = APIGatewayProxyStructuredResultV2;
 
@@ -42,6 +47,12 @@ async function handler(event: any, _context: Context | null, callback?: Callback
     if (isSupportedHTTPLambdaRequest(event)) {
       if (!API_SECRET) throw new Error("API_SECRET is required for api calls");
       if (event.headers["Authorization"] !== `Bearer ${API_SECRET}`) return sendResponse("Bad Request", 400);
+    }
+
+    const deploymentGroupEvent = getDeploymentGroupEvent(event);
+    if (deploymentGroupEvent) {
+      await handleDeploymentGroupEvent(deploymentGroupEvent);
+      return sendResponse("ok", 204);
     }
 
     const workflow = getWorkflowFromSupportedEvent(event);

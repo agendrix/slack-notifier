@@ -4,6 +4,9 @@ Send a deployment notification state update to Slack.
 
 See [action.yml](./action.yml) for the list of `inputs`.
 
+Pass `group` to share one message between every environment that deploys the same commit (see the [main README](../README.md#one-message-for-many-environments)).
+After a deployment, the `RELEASE_PUBLISHED`, `RELEASE_SKIPPED` and `RELEASE_FAILED` states update the release line of a `production` group.
+
 ## Example usage
 
 ```yaml
