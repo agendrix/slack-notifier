@@ -110,14 +110,14 @@ async function findReplacingSha(message: GroupMessage): Promise<string | undefin
   return newer?.payload.sha;
 }
 
-async function announceProductionDeploy(ts: string) {
+async function announceProductionDeploy(ts: string, sha: string) {
   if (!SLACK_CONFIG.announcementChannel) return;
 
   try {
     const { permalink } = await slack.callApi("chat.getPermalink", { channel: SLACK_CONFIG.channel, message_ts: ts });
     await slack.callApi("chat.postMessage", {
       channel: SLACK_CONFIG.announcementChannel,
-      text: `<${permalink}|Deploying to production>`,
+      text: `🚀 <${permalink}|Production deploy> \`${shortSha(sha)}\``,
       unfurl_links: false,
     });
   } catch (error) {
@@ -152,7 +152,7 @@ async function createGroupMessage(event: GitHubActionsEvent, key: string): Promi
     return earliest;
   }
 
-  if (payload.group === "production") await announceProductionDeploy(posted.ts);
+  if (payload.group === "production") await announceProductionDeploy(posted.ts, payload.sha);
   return { ts: posted.ts, payload };
 }
 

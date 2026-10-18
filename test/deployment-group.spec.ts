@@ -296,7 +296,7 @@ describe("Production deploy announcement", () => {
     const message = onlyGroupMessage();
     assert.deepStrictEqual(
       announcements().map(announcement => announcement.text),
-      [`<https://mock.slack.com/archives/${mock.slackConfig.channel}/p${message.ts}|Deploying to production>`]
+      [`🚀 <https://mock.slack.com/archives/${mock.slackConfig.channel}/p${message.ts}|Production deploy> \`266db80\``]
     );
   });
 
