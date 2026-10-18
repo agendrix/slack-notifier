@@ -73,6 +73,9 @@ const handlers: { [method: string]: (options: any) => any } = {
     }
     return { messages };
   },
+  "chat.getPermalink": options => ({
+    permalink: `https://mock.slack.com/archives/${options.channel}/p${options.message_ts}`,
+  }),
   "users.lookupByEmail": options => {
     if (options.email !== KNOWN_SLACK_USER.email) throw "users_not_found";
     return { user: { id: KNOWN_SLACK_USER.id } };

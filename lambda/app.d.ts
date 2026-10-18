@@ -88,6 +88,7 @@ declare global {
     channel: string;
     url: string;
     accessToken: string;
+    announcementChannel?: string | null;
   };
 
   type CodepipelineConfig = {

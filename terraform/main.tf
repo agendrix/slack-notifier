@@ -30,9 +30,10 @@ resource "aws_lambda_function" "lambda" {
       GITHUB_TOKEN = var.github_oauth_token
       REPO         = jsonencode(var.repo)
       SLACK_CONFIG = jsonencode({
-        channel     = var.slack_config.channel
-        url         = var.slack_config.url
-        accessToken = var.slack_config.access_token
+        channel             = var.slack_config.channel
+        url                 = var.slack_config.url
+        accessToken         = var.slack_config.access_token
+        announcementChannel = var.announcement_channel
       })
       S3_CONFIG = jsonencode({
         bucket = var.bucket

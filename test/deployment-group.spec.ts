@@ -282,3 +282,51 @@ describe("Deployment groups", () => {
     });
   });
 });
+
+describe("Production deploy announcement", () => {
+  beforeEach(() => resetFakeSlack());
+
+  const announcements = () =>
+    getSlackMessages().filter(message => message.channel === mock.slackConfig.announcementChannel);
+
+  it("links the production message once in the announcement channel", async () => {
+    await send(makeEvent({ group: "production" }));
+    await send(makeEvent({ group: "production", state: "DEPLOYING" }));
+
+    const message = onlyGroupMessage();
+    assert.deepStrictEqual(
+      announcements().map(announcement => announcement.text),
+      [`<https://mock.slack.com/archives/${mock.slackConfig.channel}/p${message.ts}|Deploying to production>`]
+    );
+  });
+
+  it("does not announce a production message another environment already posted", async () => {
+    seedSlackMessage({
+      channel: mock.slackConfig.channel,
+      text: "seeded",
+      metadata: { event_type: "deployment_group", event_payload: otherEnvironmentPayload("production") },
+    });
+
+    await send(makeEvent({ group: "production" }));
+
+    assert.strictEqual(announcements().length, 0);
+  });
+
+  it("leaves the announcement to the environment whose message is kept", async () => {
+    simulateConcurrentPost({
+      channel: mock.slackConfig.channel,
+      text: "concurrent",
+      metadata: { event_type: "deployment_group", event_payload: otherEnvironmentPayload("production") },
+    });
+
+    await send(makeEvent({ group: "production" }));
+
+    assert.strictEqual(announcements().length, 0);
+  });
+
+  it("does not announce other groups", async () => {
+    await send(makeEvent({ group: "staging" }));
+
+    assert.strictEqual(announcements().length, 0);
+  });
+});
