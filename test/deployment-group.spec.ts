@@ -347,10 +347,10 @@ describe("Deployment groups", () => {
       assert.ok(body.includes("• ✅ <https://run/2|*production-eu*> · 16:21:02: Finished"));
     });
 
-    it("shows five commits and links the rest in the footer", () => {
+    it("links the commits past the fifth right under the list and counts them all in the footer", () => {
       const [attachment] = deploymentGroup.renderGroupMessage(payload({})).attachments;
-      assert.ok(attachment.text.includes("<e|5>"));
-      assert.ok(attachment.footer.startsWith("<https://github.com/compare|+2 more>"));
+      assert.ok(attachment.text.includes("<e|5>\n<https://github.com/compare|+2 more>"));
+      assert.ok(attachment.footer.startsWith("<https://github.com/compare|7 new commits>"));
     });
 
     it("counts the commits in the footer when all of them are shown", () => {

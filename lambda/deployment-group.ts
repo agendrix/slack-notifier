@@ -251,13 +251,14 @@ function renderRelease(release: ReleaseState): string {
   return lines[release.state];
 }
 
-function renderCommitsLink(payload: DeploymentGroupPayload, isListed: boolean): string {
+function renderCommitsCount(payload: DeploymentGroupPayload, isListed: boolean): string {
   if (payload.totalCommits === 0) return "No code change";
-  if (!isListed) return `<${payload.compareUrl}|${pluralize(payload.totalCommits, "commit")}>`;
-  if (payload.totalCommits > payload.changelog.length) {
-    return `<${payload.compareUrl}|+${payload.totalCommits - payload.changelog.length} more>`;
-  }
-  return `<${payload.compareUrl}|${pluralize(payload.totalCommits, "new commit")}>`;
+  return `<${payload.compareUrl}|${pluralize(payload.totalCommits, isListed ? "new commit" : "commit")}>`;
+}
+
+function renderCommits(payload: DeploymentGroupPayload): string[] {
+  const hidden = payload.totalCommits - payload.changelog.length;
+  return [...payload.changelog, ...(hidden > 0 ? [`<${payload.compareUrl}|+${hidden} more>`] : [])];
 }
 
 function renderGroupMessage(payload: DeploymentGroupPayload) {
@@ -266,12 +267,12 @@ function renderGroupMessage(payload: DeploymentGroupPayload) {
   const initiatorLabel = payload.group === "production" ? "launched by" : "merged by";
   /** Slack renders the footer as small grey text, with links but without bold. */
   const footer = [
-    renderCommitsLink(payload, isCommitListed),
+    renderCommitsCount(payload, isCommitListed),
     ...(payload.initiator ? [`${initiatorLabel} @${payload.initiator}`] : []),
   ].join(" · ");
 
   const lines = [
-    ...(isCommitListed ? payload.changelog : []),
+    ...(isCommitListed ? renderCommits(payload) : []),
     ...(payload.release ? [renderRelease(payload.release)] : []),
     ...Object.keys(payload.envs)
       .sort()
