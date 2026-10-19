@@ -264,14 +264,14 @@ function renderGroupMessage(payload: DeploymentGroupPayload) {
   const status = getGroupStatus(payload);
   const isCommitListed = payload.release?.state !== "published";
   const initiatorLabel = payload.group === "production" ? "launched by" : "merged by";
-  const context = [
+  /** Slack renders the footer as small grey text, with links but without bold. */
+  const footer = [
     renderCommitsLink(payload, isCommitListed),
-    ...(payload.initiator ? [`${initiatorLabel} *@${payload.initiator}*`] : []),
+    ...(payload.initiator ? [`${initiatorLabel} @${payload.initiator}`] : []),
   ].join(" · ");
 
   const lines = [
     ...(isCommitListed ? payload.changelog : []),
-    context,
     ...(payload.release ? [renderRelease(payload.release)] : []),
     ...Object.keys(payload.envs)
       .sort()
@@ -280,7 +280,7 @@ function renderGroupMessage(payload: DeploymentGroupPayload) {
 
   return {
     text: renderTitle(payload, status),
-    attachments: [{ color: COLORS_BY_STATUS[status], text: lines.join("\n"), mrkdwn_in: ["text"] }],
+    attachments: [{ color: COLORS_BY_STATUS[status], text: lines.join("\n"), footer, mrkdwn_in: ["text"] }],
     metadata: { event_type: EVENT_TYPE, event_payload: payload },
   };
 }

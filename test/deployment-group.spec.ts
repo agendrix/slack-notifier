@@ -53,6 +53,7 @@ const onlyGroupMessage = () => {
   return messages[0];
 };
 const bodyOf = (message: { attachments?: any[] }) => message.attachments![0].text as string;
+const footerOf = (message: { attachments?: any[] }) => message.attachments![0].footer as string;
 
 const otherEnvironmentPayload = (group: DeploymentGroup, sha = SHA) => ({
   key: `${mock.repo.owner}/${mock.repo.name}/${sha}/${group}`,
@@ -80,9 +81,11 @@ describe("Deployment groups", () => {
     assert.strictEqual(message.channel, mock.slackConfig.channel);
     assert.ok(message.text!.startsWith(":loading_fast: Deploying `266db80` to *production*"));
     assert.ok(bodyOf(message).includes("Mock of Head commit"));
-    assert.ok(bodyOf(message).includes(`• :loading-blue: <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
+    assert.ok(
+      bodyOf(message).includes(`• :loading-blue: <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `)
+    );
     assert.ok(bodyOf(message).includes(": Started"));
-    assert.ok(bodyOf(message).includes("launched by *@ericmatte*"));
+    assert.ok(footerOf(message).endsWith("|1 new commit> · launched by @ericmatte"));
   });
 
   it("joins the message another environment already posted", async () => {
@@ -207,7 +210,7 @@ describe("Deployment groups", () => {
 
       const body = bodyOf(onlyGroupMessage());
       assert.ok(!body.includes("📦"));
-      assert.ok(body.includes("launched by *@ageorgaris*"));
+      assert.ok(footerOf(onlyGroupMessage()).endsWith("launched by @ageorgaris"));
       assert.ok(body.includes("Mock of Head commit"));
     });
 
@@ -282,7 +285,7 @@ describe("Deployment groups", () => {
       const message = onlyGroupMessage();
       assert.ok(message.text!.startsWith("❌ Deployed `266db80` to *staging* · 0/1 done, 1 failed"));
       assert.ok(bodyOf(message).includes("Mock of Head commit"));
-      assert.ok(bodyOf(message).includes("merged by *@ericmatte*"));
+      assert.ok(footerOf(message).endsWith("merged by @ericmatte"));
       assert.ok(bodyOf(message).includes(`: Failed`));
       assert.ok(!bodyOf(message).includes("Failed at"));
 
@@ -300,7 +303,13 @@ describe("Deployment groups", () => {
           event_type: "deployment_group",
           event_payload: {
             ...otherEnvironmentPayload("staging"),
-            envs: { "staging-eu": { state: "FAILED", at: 0, runUrl: "https://github.com/MockOwner/MockRepo/actions/runs/2002" } },
+            envs: {
+              "staging-eu": {
+                state: "FAILED",
+                at: 0,
+                runUrl: "https://github.com/MockOwner/MockRepo/actions/runs/2002",
+              },
+            },
           },
         },
       });
@@ -308,7 +317,11 @@ describe("Deployment groups", () => {
       await send(staging({ state: "SUCCEEDED" }));
 
       const message = onlyGroupMessage();
-      assert.ok(bodyOf(message).includes("❌ <https://github.com/MockOwner/MockRepo/actions/runs/2002|*staging-eu*> · 19:00:00: Failed"));
+      assert.ok(
+        bodyOf(message).includes(
+          "❌ <https://github.com/MockOwner/MockRepo/actions/runs/2002|*staging-eu*> · 19:00:00: Failed"
+        )
+      );
       assert.ok(bodyOf(message).includes(`✅ <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
       assert.ok(message.text!.includes("1/2 done, 1 failed"));
     });
@@ -334,16 +347,18 @@ describe("Deployment groups", () => {
       assert.ok(body.includes("• ✅ <https://run/2|*production-eu*> · 16:21:02: Finished"));
     });
 
-    it("shows five commits and links the rest", () => {
-      const body = deploymentGroup.renderGroupMessage(payload({})).attachments[0].text;
-      assert.ok(body.includes("<e|5>"));
-      assert.ok(body.includes("<https://github.com/compare|+2 more>"));
+    it("shows five commits and links the rest in the footer", () => {
+      const [attachment] = deploymentGroup.renderGroupMessage(payload({})).attachments;
+      assert.ok(attachment.text.includes("<e|5>"));
+      assert.ok(attachment.footer.startsWith("<https://github.com/compare|+2 more>"));
     });
 
-    it("counts the commits when all of them are shown", () => {
-      const body = deploymentGroup.renderGroupMessage(payload({ changelog: ["<a|1>"], totalCommits: 1 })).attachments[0]
-        .text;
-      assert.ok(body.includes("<https://github.com/compare|1 new commit>"));
+    it("counts the commits in the footer when all of them are shown", () => {
+      const [attachment] = deploymentGroup.renderGroupMessage(
+        payload({ changelog: ["<a|1>"], totalCommits: 1 })
+      ).attachments;
+      assert.strictEqual(attachment.footer, "<https://github.com/compare|1 new commit> · merged by @ericmatte");
+      assert.ok(!attachment.text.includes("new commit"));
     });
   });
 });
