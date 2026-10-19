@@ -17,6 +17,7 @@ import {
 import { mock } from "./mocks/libs/constants";
 
 import { __test__ } from "../lambda/index";
+import { SLACK_CONFIG } from "../lambda/env";
 import { __test__ as deploymentGroup, DeploymentGroupPayload } from "../lambda/deployment-group";
 
 const SHA = mock.commits.head.ref;
@@ -322,6 +323,24 @@ describe("Production deploy announcement", () => {
     await send(makeEvent({ group: "production" }));
 
     assert.strictEqual(announcements().length, 0);
+  });
+
+  it("posts only the production message when no announcement channel is configured", async () => {
+    SLACK_CONFIG.announcementChannel = null;
+    try {
+      const calls = await withFakeSlack(async () => {
+        await send(makeEvent({ group: "production" }));
+      });
+
+      onlyGroupMessage();
+      assert.strictEqual(calls.filter(call => call.method === "chat.getPermalink").length, 0);
+      assert.deepStrictEqual(
+        getSlackMessages().map(message => message.channel),
+        [mock.slackConfig.channel]
+      );
+    } finally {
+      SLACK_CONFIG.announcementChannel = mock.slackConfig.announcementChannel;
+    }
   });
 
   it("does not announce other groups", async () => {
