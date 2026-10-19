@@ -266,7 +266,7 @@ function renderGroupMessage(payload: DeploymentGroupPayload) {
   const initiatorLabel = payload.group === "production" ? "launched by" : "merged by";
   const context = [
     renderCommitsLink(payload, isCommitListed),
-    ...(payload.initiator ? [`${initiatorLabel} @${payload.initiator}`] : []),
+    ...(payload.initiator ? [`${initiatorLabel} *@${payload.initiator}*`] : []),
   ].join(" · ");
 
   const lines = [

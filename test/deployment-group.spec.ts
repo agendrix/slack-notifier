@@ -82,7 +82,7 @@ describe("Deployment groups", () => {
     assert.ok(bodyOf(message).includes("Mock of Head commit"));
     assert.ok(bodyOf(message).includes(`• :loading-blue: <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
     assert.ok(bodyOf(message).includes(": Started"));
-    assert.ok(bodyOf(message).includes("launched by @ericmatte"));
+    assert.ok(bodyOf(message).includes("launched by *@ericmatte*"));
   });
 
   it("joins the message another environment already posted", async () => {
@@ -207,7 +207,7 @@ describe("Deployment groups", () => {
 
       const body = bodyOf(onlyGroupMessage());
       assert.ok(!body.includes("📦"));
-      assert.ok(body.includes("launched by @ageorgaris"));
+      assert.ok(body.includes("launched by *@ageorgaris*"));
       assert.ok(body.includes("Mock of Head commit"));
     });
 
@@ -282,7 +282,7 @@ describe("Deployment groups", () => {
       const message = onlyGroupMessage();
       assert.ok(message.text!.startsWith("❌ Deployed `266db80` to *staging* · 0/1 done, 1 failed"));
       assert.ok(bodyOf(message).includes("Mock of Head commit"));
-      assert.ok(bodyOf(message).includes("merged by @ericmatte"));
+      assert.ok(bodyOf(message).includes("merged by *@ericmatte*"));
       assert.ok(bodyOf(message).includes(`: Failed`));
       assert.ok(!bodyOf(message).includes("Failed at"));
 
