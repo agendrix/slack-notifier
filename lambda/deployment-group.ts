@@ -231,16 +231,15 @@ function renderTitle(payload: DeploymentGroupPayload, status: GroupStatus): stri
 }
 
 function renderEnvironment(name: string, environment: EnvironmentState): string {
-  const run = `<${environment.runUrl}|run>`;
-  const time = formatTime(environment.at);
-  const lines: { [k in GithubActionsEventState]?: string } = {
-    SUCCEEDED: `✅ *${name}* · Finished ${time}`,
-    FAILED: `❌ *${name}* · Failed${environment.failedStep ? ` at ${environment.failedStep}` : ""} ${time}`,
-    STOPPED: `⏹️ *${name}* · Stopped ${time}`,
-    SKIPPED: `⏭️ *${name}* · Skipped ${time}`,
+  const failedStep = environment.failedStep ? ` at ${environment.failedStep}` : "";
+  const lines: { [k in GithubActionsEventState]?: [emoji: string, step: string] } = {
+    SUCCEEDED: ["✅", "Finished"],
+    FAILED: ["❌", `Failed${failedStep}`],
+    STOPPED: ["⏹️", "Stopped"],
+    SKIPPED: ["⏭️", "Skipped"],
   };
-  const line = lines[environment.state] || `:loading_fast: *${name}* · ${STEP_LABELS[environment.state]} ${time}`;
-  return `${line} · ${run}`;
+  const [emoji, step] = lines[environment.state] || [":loading-blue:", STEP_LABELS[environment.state]];
+  return `• ${emoji} <${environment.runUrl}|*${name}*> · ${formatTime(environment.at)}: ${step}`;
 }
 
 function renderRelease(release: ReleaseState): string {
