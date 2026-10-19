@@ -84,9 +84,6 @@ This mode needs:
 - `slack_config.channel` set to the channel ID (ex. `C0FUJDYQ5`), not its name, because `conversations.history` only accepts IDs.
 - The Slack bot scopes `channels:history` (to find the shared message) and `users:read.email` (to mention the initiator).
 
-Set `announcement_channel` to a channel ID to post one link to each `production` message there, from the environment that created it.
-The bot must be a member of that channel.
-
 ### CodePipeline
 
 If you want to get notifications for an AWS CodePipeline deployment, append this to your terraform:

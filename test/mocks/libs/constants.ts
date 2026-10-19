@@ -51,7 +51,6 @@ export const mock: Mock = {
     channel: "MockSlackChannel",
     accessToken: "MockAccessToken",
     url: "MockUrl",
-    announcementChannel: "MockAnnouncementChannel",
   },
   codepipelineConfig: {
     ecrRefRepository: "mockEcrRefRepository",

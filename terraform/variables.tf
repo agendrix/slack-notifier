@@ -25,12 +25,6 @@ variable "slack_config" {
   }
 }
 
-variable "announcement_channel" {
-  description = "Slack channel that gets one link to the message of each production deploy"
-  type        = string
-  default     = null
-}
-
 variable "deployment_type" {
   description = "Type of deployment supported by the Slack Notifier"
   type        = string
