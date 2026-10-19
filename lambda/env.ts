@@ -4,6 +4,7 @@ export const REPO = JSON.parse(process.env.REPO as string) as Repo;
 export const SLACK_CONFIG = JSON.parse(process.env.SLACK_CONFIG as string) as SlackConfig;
 export const S3_CONFIG = JSON.parse(process.env.S3_CONFIG as string) as S3Config;
 export const API_SECRET = process.env.API_SECRET as string | undefined;
+export const SETTLE_DELAY_MS = Number(process.env.SETTLE_DELAY_MS ?? 2000);
 export const CODEPIPELINE_CONFIG = process.env.CODEPIPELINE_CONFIG
   ? (JSON.parse(process.env.CODEPIPELINE_CONFIG) as CodepipelineConfig)
   : undefined;
