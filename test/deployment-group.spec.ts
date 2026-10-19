@@ -101,7 +101,7 @@ describe("Deployment groups", () => {
 
     assert.strictEqual(calls.filter(call => call.method === "chat.postMessage").length, 0);
     const message = onlyGroupMessage();
-    assert.ok(bodyOf(message).includes("|*staging-eu*> · 19:00:00: Started"));
+    assert.ok(bodyOf(message).includes("|*staging-eu*> · 19:00: Started"));
     assert.ok(bodyOf(message).includes(`|*${ENV}*> · `));
     assert.ok(message.text!.includes("0/2 done"));
   });
@@ -119,7 +119,7 @@ describe("Deployment groups", () => {
 
     assert.strictEqual(calls.filter(call => call.method === "chat.delete").length, 1);
     const message = onlyGroupMessage();
-    assert.ok(bodyOf(message).includes("|*staging-eu*> · 19:00:00: Started"));
+    assert.ok(bodyOf(message).includes("|*staging-eu*> · 19:00: Started"));
     assert.ok(bodyOf(message).includes(`|*${ENV}*> · `));
   });
 
@@ -319,7 +319,7 @@ describe("Deployment groups", () => {
       const message = onlyGroupMessage();
       assert.ok(
         bodyOf(message).includes(
-          "❌ <https://github.com/MockOwner/MockRepo/actions/runs/2002|*staging-eu*> · 19:00:00: Failed"
+          "❌ <https://github.com/MockOwner/MockRepo/actions/runs/2002|*staging-eu*> · 19:00: Failed"
         )
       );
       assert.ok(bodyOf(message).includes(`✅ <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
@@ -343,8 +343,8 @@ describe("Deployment groups", () => {
       };
       const body = deploymentGroup.renderGroupMessage(payload({ envs })).attachments[0].text;
 
-      assert.ok(body.includes("• :loading-blue: <https://run/1|*production-ca*> · 16:15:19: Pre-migrations"));
-      assert.ok(body.includes("• ✅ <https://run/2|*production-eu*> · 16:21:02: Finished"));
+      assert.ok(body.includes("• :loading-blue: <https://run/1|*production-ca*> · 16:15: Pre-migrations"));
+      assert.ok(body.includes("• ✅ <https://run/2|*production-eu*> · 16:21: Finished"));
     });
 
     it("links the commits past the fifth right under the list and counts them all in the footer", () => {
