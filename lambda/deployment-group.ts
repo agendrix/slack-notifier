@@ -227,7 +227,8 @@ function renderTitle(payload: DeploymentGroupPayload, status: GroupStatus): stri
     return `⏭️ Skipped ${sha} on *${payload.group}* · ${reason}`;
   }
   if (!isEnded) return `:loading_fast: Deploying ${sha} to *${payload.group}* · ${progress}`;
-  return `${status === "failed" ? "❌" : "✅"} Deployed ${sha} to *${payload.group}* · ${progress}`;
+  if (status === "failed") return `❌ Deployed ${sha} to *${payload.group}* · ${progress}`;
+  return `✅ Deployed ${sha} to *${payload.group}*`;
 }
 
 function renderEnvironment(name: string, environment: EnvironmentState): string {

@@ -150,7 +150,7 @@ describe("Deployment groups", () => {
     await send(makeEvent({ state: "SUCCEEDED" }));
 
     const message = onlyGroupMessage();
-    assert.ok(message.text!.startsWith("✅ Deployed `266db80` to *production* · 1/1 done"));
+    assert.strictEqual(message.text, "✅ Deployed `266db80` to *production*");
     assert.ok(bodyOf(message).includes(`✅ <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
     assert.strictEqual(message.attachments![0].color, deploymentGroup.COLORS_BY_STATUS.succeeded);
     assert.strictEqual(threadReplies().length, 0);
