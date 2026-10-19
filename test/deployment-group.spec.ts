@@ -62,7 +62,6 @@ const otherEnvironmentPayload = (group: DeploymentGroup, sha = SHA) => ({
   changelog: ["<https://commit|Seeded commit>"],
   totalCommits: 1,
   compareUrl: "https://github.com/compare",
-  ...(group === "production" ? { release: { state: "pending" } } : {}),
   envs: {
     "staging-eu": { state: "STARTED", at: 0, runUrl: "https://github.com/MockOwner/MockRepo/actions/runs/2002" },
   },
@@ -202,11 +201,12 @@ describe("Deployment groups", () => {
     const production = (overrides: Partial<GitHubActionsEvent>) =>
       makeEvent({ group: "production", initiator: "ageorgaris", ...overrides });
 
-    it("waits for the release while deploying", async () => {
+    it("shows no release line until a release job reports, so projects without release notes never get one", async () => {
       await send(production({}));
+      await send(production({ state: "SUCCEEDED" }));
 
       const body = bodyOf(onlyGroupMessage());
-      assert.ok(body.includes("📦 Release pending"));
+      assert.ok(!body.includes("📦"));
       assert.ok(body.includes("launched by @ageorgaris"));
       assert.ok(body.includes("Mock of Head commit"));
     });

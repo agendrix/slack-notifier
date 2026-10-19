@@ -18,7 +18,7 @@ type EnvironmentState = {
 };
 
 type ReleaseState = {
-  state: "pending" | "published" | "skipped" | "failed";
+  state: "published" | "skipped" | "failed";
   name?: string;
   url?: string;
   runUrl?: string;
@@ -125,7 +125,6 @@ async function createGroupMessage(event: GitHubActionsEvent, key: string): Promi
     changelog: changelog.slice(0, MAX_COMMITS_TO_SHOW),
     totalCommits,
     compareUrl,
-    ...(event.group === "production" ? { release: { state: "pending" } } : {}),
     envs: {},
   };
 
@@ -246,7 +245,6 @@ function renderEnvironment(name: string, environment: EnvironmentState): string 
 
 function renderRelease(release: ReleaseState): string {
   const lines: { [k in ReleaseState["state"]]: string } = {
-    pending: "📦 Release pending",
     published: `📦 Release <${release.url}|*${release.name}*>`,
     skipped: "📦 No new release",
     failed: `📦 Release failed · <${release.runUrl}|Open the run>`,
