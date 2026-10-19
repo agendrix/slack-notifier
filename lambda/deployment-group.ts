@@ -59,6 +59,9 @@ const FAILED_STEP_LABELS: { [k in GithubActionsEventState]?: string } = { ...STE
 
 const ENDING_STATES: GithubActionsEventState[] = ["SUCCEEDED", "FAILED", "STOPPED", "SKIPPED"];
 
+/** The team follows production deploys; the other groups only show up in Slack when one of their deploys fails. */
+const isQuietGroup = (group: DeploymentGroup) => group !== "production";
+
 const RELEASE_STATES: { [k in GithubActionsEventState]?: ReleaseState["state"] } = {
   RELEASE_PUBLISHED: "published",
   RELEASE_SKIPPED: "skipped",
@@ -190,7 +193,8 @@ async function getMention(event: GitHubActionsEvent): Promise<string> {
 
 function renderFailureReply(event: GitHubActionsEvent, failedStep: string | undefined, mention: string): string {
   const runLink = `<${getRunUrl(event)}|Open the run>`;
-  const reason = event.state === "RELEASE_FAILED" ? "❌ Release failed." : `❌ *${ENV}* failed at *${failedStep}*.`;
+  const step = failedStep ? ` at *${failedStep}*` : "";
+  const reason = event.state === "RELEASE_FAILED" ? "❌ Release failed." : `❌ *${ENV}* failed${step}.`;
   return [reason, [runLink, mention].filter(Boolean).join(" · ")].join(" ");
 }
 
@@ -232,7 +236,7 @@ function renderEnvironment(name: string, environment: EnvironmentState): string 
   const time = formatTime(environment.at);
   const lines: { [k in GithubActionsEventState]?: string } = {
     SUCCEEDED: `✅ *${name}* · Finished ${time}`,
-    FAILED: `❌ *${name}* · Failed at ${environment.failedStep} ${time}`,
+    FAILED: `❌ *${name}* · Failed${environment.failedStep ? ` at ${environment.failedStep}` : ""} ${time}`,
     STOPPED: `⏹️ *${name}* · Stopped ${time}`,
     SKIPPED: `⏭️ *${name}* · Skipped ${time}`,
   };
@@ -290,9 +294,14 @@ export function isDeploymentGroupEvent(event: GitHubActionsEvent): boolean {
 
 export async function handleDeploymentGroupEvent(event: GitHubActionsEvent): Promise<void> {
   const key = getGroupKey(event);
-  let message = (await findGroupMessage(key)) || (await createGroupMessage(event, key));
+  const existing = await findGroupMessage(key);
+  const isQuiet = isQuietGroup(event.group!);
+  if (!existing && isQuiet && event.state !== "FAILED") return;
+
+  let message = existing || (await createGroupMessage(event, key));
   const previous = message.payload.envs[ENV];
-  const failedStep = FAILED_STEP_LABELS[previous?.state || "STARTED"];
+  // A quiet group keeps no message before its first failure, so the step that failed is unknown there.
+  const failedStep = previous || !isQuiet ? FAILED_STEP_LABELS[previous?.state || "STARTED"] : undefined;
   const replacedBy = event.state === "SKIPPED" ? await findReplacingSha(message) : undefined;
   const applyChange = buildChange(event, failedStep, replacedBy);
 

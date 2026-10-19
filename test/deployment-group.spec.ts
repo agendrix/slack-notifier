@@ -30,7 +30,7 @@ const makeEvent = (overrides: Partial<GitHubActionsEvent>): GitHubActionsEvent =
   githubSha: SHA,
   githubRef: "refs/heads/master",
   previousSha: mock.commits.base.ref,
-  group: "staging",
+  group: "production",
   initiator: "ericmatte",
   ...overrides,
 });
@@ -79,10 +79,10 @@ describe("Deployment groups", () => {
 
     const message = onlyGroupMessage();
     assert.strictEqual(message.channel, mock.slackConfig.channel);
-    assert.ok(message.text!.startsWith(":loading_fast: Deploying `266db80` to *staging*"));
+    assert.ok(message.text!.startsWith(":loading_fast: Deploying `266db80` to *production*"));
     assert.ok(bodyOf(message).includes("Mock of Head commit"));
     assert.ok(bodyOf(message).includes(`:loading_fast: *${ENV}* · Started`));
-    assert.ok(bodyOf(message).includes("merged by @ericmatte"));
+    assert.ok(bodyOf(message).includes("launched by @ericmatte"));
     assert.ok(bodyOf(message).includes("<https://github.com/MockOwner/MockRepo/actions/runs/1001|run>"));
   });
 
@@ -90,7 +90,7 @@ describe("Deployment groups", () => {
     seedSlackMessage({
       channel: mock.slackConfig.channel,
       text: "seeded",
-      metadata: { event_type: "deployment_group", event_payload: otherEnvironmentPayload("staging") },
+      metadata: { event_type: "deployment_group", event_payload: otherEnvironmentPayload("production") },
     });
 
     const calls = await withFakeSlack(async () => {
@@ -108,7 +108,7 @@ describe("Deployment groups", () => {
     simulateConcurrentPost({
       channel: mock.slackConfig.channel,
       text: "concurrent",
-      metadata: { event_type: "deployment_group", event_payload: otherEnvironmentPayload("staging") },
+      metadata: { event_type: "deployment_group", event_payload: otherEnvironmentPayload("production") },
     });
 
     const calls = await withFakeSlack(async () => {
@@ -148,7 +148,7 @@ describe("Deployment groups", () => {
     await send(makeEvent({ state: "SUCCEEDED" }));
 
     const message = onlyGroupMessage();
-    assert.ok(message.text!.startsWith("✅ Deployed `266db80` to *staging* · 1/1 done"));
+    assert.ok(message.text!.startsWith("✅ Deployed `266db80` to *production* · 1/1 done"));
     assert.ok(bodyOf(message).includes(`✅ *${ENV}* · Finished`));
     assert.strictEqual(message.attachments![0].color, deploymentGroup.COLORS_BY_STATUS.succeeded);
     assert.strictEqual(threadReplies().length, 0);
@@ -160,7 +160,7 @@ describe("Deployment groups", () => {
     await send(makeEvent({ state: "FAILED", initiatorEmail: KNOWN_SLACK_USER.email }));
 
     const message = onlyGroupMessage();
-    assert.ok(message.text!.startsWith("❌ Deployed `266db80` to *staging* · 0/1 done, 1 failed"));
+    assert.ok(message.text!.startsWith("❌ Deployed `266db80` to *production* · 0/1 done, 1 failed"));
     assert.ok(bodyOf(message).includes(`❌ *${ENV}* · Failed at Post-migrations`));
 
     const replies = threadReplies();
@@ -182,12 +182,12 @@ describe("Deployment groups", () => {
     seedSlackMessage({
       channel: mock.slackConfig.channel,
       text: "newer",
-      metadata: { event_type: "deployment_group", event_payload: otherEnvironmentPayload("staging", NEWER_SHA) },
+      metadata: { event_type: "deployment_group", event_payload: otherEnvironmentPayload("production", NEWER_SHA) },
     });
     await send(makeEvent({ state: "SKIPPED" }));
 
     const skipped = groupMessages().find(message => message.metadata!.event_payload.sha === SHA)!;
-    assert.ok(skipped.text!.startsWith("⏭️ Skipped `266db80` on *staging* · replaced by `9f3c2a1`"));
+    assert.ok(skipped.text!.startsWith("⏭️ Skipped `266db80` on *production* · replaced by `9f3c2a1`"));
     assert.strictEqual(skipped.attachments![0].color, deploymentGroup.COLORS_BY_STATUS.skipped);
   });
 
@@ -195,7 +195,7 @@ describe("Deployment groups", () => {
     await send(makeEvent({}));
     await send(makeEvent({ state: "SKIPPED" }));
 
-    assert.ok(onlyGroupMessage().text!.startsWith("⏭️ Skipped `266db80` on *staging* · nothing to deploy"));
+    assert.ok(onlyGroupMessage().text!.startsWith("⏭️ Skipped `266db80` on *production* · nothing to deploy"));
   });
 
   describe("production", () => {
@@ -257,6 +257,60 @@ describe("Deployment groups", () => {
       assert.strictEqual(replies.length, 1);
       assert.ok(replies[0].text!.includes("❌ Release failed"));
       assert.ok(replies[0].text!.includes(`<@${KNOWN_SLACK_USER.id}>`));
+    });
+  });
+
+  describe("outside production", () => {
+    const staging = (overrides: Partial<GitHubActionsEvent>) => makeEvent({ group: "staging", ...overrides });
+
+    it("posts nothing while the deployment goes well", async () => {
+      const calls = await withFakeSlack(async () => {
+        await send(staging({}));
+        await send(staging({ state: "POST_MIGRATIONS" }));
+        await send(staging({ state: "SUCCEEDED" }));
+        await send(staging({ state: "SKIPPED" }));
+      });
+
+      assert.strictEqual(getSlackMessages().length, 0);
+      assert.strictEqual(calls.filter(call => call.method !== "conversations.history").length, 0);
+    });
+
+    it("posts the deployment and mentions the initiator in the thread when it fails", async () => {
+      await send(staging({}));
+      await send(staging({ state: "FAILED", initiatorEmail: KNOWN_SLACK_USER.email }));
+
+      const message = onlyGroupMessage();
+      assert.ok(message.text!.startsWith("❌ Deployed `266db80` to *staging* · 0/1 done, 1 failed"));
+      assert.ok(bodyOf(message).includes("Mock of Head commit"));
+      assert.ok(bodyOf(message).includes("merged by @ericmatte"));
+      assert.ok(bodyOf(message).includes(`❌ *${ENV}* · Failed `));
+      assert.ok(!bodyOf(message).includes("Failed at"));
+
+      const replies = threadReplies();
+      assert.strictEqual(replies.length, 1);
+      assert.ok(replies[0].text!.startsWith(`❌ *${ENV}* failed.`));
+      assert.ok(replies[0].text!.includes(`<@${KNOWN_SLACK_USER.id}>`));
+    });
+
+    it("adds the environments that finish after another one failed", async () => {
+      seedSlackMessage({
+        channel: mock.slackConfig.channel,
+        text: "failed",
+        metadata: {
+          event_type: "deployment_group",
+          event_payload: {
+            ...otherEnvironmentPayload("staging"),
+            envs: { "staging-eu": { state: "FAILED", at: 0, runUrl: "https://github.com/MockOwner/MockRepo/actions/runs/2002" } },
+          },
+        },
+      });
+
+      await send(staging({ state: "SUCCEEDED" }));
+
+      const message = onlyGroupMessage();
+      assert.ok(bodyOf(message).includes("❌ *staging-eu* · Failed"));
+      assert.ok(bodyOf(message).includes(`✅ *${ENV}* · Finished`));
+      assert.ok(message.text!.includes("1/2 done, 1 failed"));
     });
   });
 

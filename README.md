@@ -78,6 +78,8 @@ When several environments deploy the same commit, pass the same `group` input (`
 They share one Slack message: each environment gets its own line, and the message is edited in place.
 The thread only receives failures, with a mention of the `initiator`.
 
+Only the `production` group posts for every deploy. Any other group stays silent until one of its environments fails: that failure posts the message, and the environments that finish afterwards join it. Pass `previous-sha` with the failure too, so this message lists the deployed commits.
+
 The lambdas of a group may live in different AWS accounts, so the shared state is kept in the Slack message metadata instead of S3.
 This mode needs:
 
