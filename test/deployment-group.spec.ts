@@ -79,7 +79,7 @@ describe("Deployment groups", () => {
 
     const message = onlyGroupMessage();
     assert.strictEqual(message.channel, mock.slackConfig.channel);
-    assert.ok(message.text!.startsWith(":loading_fast: Deploying `266db80` to *production*"));
+    assert.ok(message.text!.startsWith(":loading_fast: Deploying <https://github.com/MockOwner/MockRepo/commit/266db80b3e2f1bdeb69ab403ff939da49c3daca3|266db80> to *production*"));
     assert.ok(bodyOf(message).includes("Mock of Head commit"));
     assert.ok(
       bodyOf(message).includes(`• :loading-blue: <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `)
@@ -150,7 +150,7 @@ describe("Deployment groups", () => {
     await send(makeEvent({ state: "SUCCEEDED" }));
 
     const message = onlyGroupMessage();
-    assert.strictEqual(message.text, "✅ Deployed `266db80` to *production*");
+    assert.strictEqual(message.text, "✅ Deployed <https://github.com/MockOwner/MockRepo/commit/266db80b3e2f1bdeb69ab403ff939da49c3daca3|266db80> to *production*");
     assert.ok(bodyOf(message).includes(`✅ <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
     assert.strictEqual(message.attachments![0].color, deploymentGroup.COLORS_BY_STATUS.succeeded);
     assert.strictEqual(threadReplies().length, 0);
@@ -162,7 +162,7 @@ describe("Deployment groups", () => {
     await send(makeEvent({ state: "FAILED", initiatorEmail: KNOWN_SLACK_USER.email }));
 
     const message = onlyGroupMessage();
-    assert.ok(message.text!.startsWith("❌ Deployed `266db80` to *production* · 0/1 done, 1 failed"));
+    assert.ok(message.text!.startsWith("❌ Deployed <https://github.com/MockOwner/MockRepo/commit/266db80b3e2f1bdeb69ab403ff939da49c3daca3|266db80> to *production* · 0/1 done, 1 failed"));
     assert.ok(bodyOf(message).includes(`: Failed at Post-migrations`));
 
     const replies = threadReplies();
@@ -189,7 +189,7 @@ describe("Deployment groups", () => {
     await send(makeEvent({ state: "SKIPPED" }));
 
     const skipped = groupMessages().find(message => message.metadata!.event_payload.sha === SHA)!;
-    assert.ok(skipped.text!.startsWith("⏭️ Skipped `266db80` on *production* · replaced by `9f3c2a1`"));
+    assert.ok(skipped.text!.startsWith("⏭️ Skipped <https://github.com/MockOwner/MockRepo/commit/266db80b3e2f1bdeb69ab403ff939da49c3daca3|266db80> on *production* · replaced by `9f3c2a1`"));
     assert.strictEqual(skipped.attachments![0].color, deploymentGroup.COLORS_BY_STATUS.skipped);
   });
 
@@ -197,7 +197,7 @@ describe("Deployment groups", () => {
     await send(makeEvent({}));
     await send(makeEvent({ state: "SKIPPED" }));
 
-    assert.ok(onlyGroupMessage().text!.startsWith("⏭️ Skipped `266db80` on *production* · nothing to deploy"));
+    assert.ok(onlyGroupMessage().text!.startsWith("⏭️ Skipped <https://github.com/MockOwner/MockRepo/commit/266db80b3e2f1bdeb69ab403ff939da49c3daca3|266db80> on *production* · nothing to deploy"));
   });
 
   describe("production", () => {
@@ -283,7 +283,7 @@ describe("Deployment groups", () => {
       await send(staging({ state: "FAILED", initiatorEmail: KNOWN_SLACK_USER.email }));
 
       const message = onlyGroupMessage();
-      assert.ok(message.text!.startsWith("❌ Deployed `266db80` to *staging* · 0/1 done, 1 failed"));
+      assert.ok(message.text!.startsWith("❌ Deployed <https://github.com/MockOwner/MockRepo/commit/266db80b3e2f1bdeb69ab403ff939da49c3daca3|266db80> to *staging* · 0/1 done, 1 failed"));
       assert.ok(bodyOf(message).includes("Mock of Head commit"));
       assert.ok(footerOf(message).endsWith("merged by @ericmatte"));
       assert.ok(bodyOf(message).includes(`: Failed`));

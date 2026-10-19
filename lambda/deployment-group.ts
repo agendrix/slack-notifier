@@ -214,7 +214,7 @@ function getGroupStatus(payload: DeploymentGroupPayload): GroupStatus {
 
 function renderTitle(payload: DeploymentGroupPayload, status: GroupStatus): string {
   const environments = Object.values(payload.envs);
-  const sha = `\`${shortSha(payload.sha)}\``;
+  const sha = `<https://github.com/${REPO.owner}/${REPO.name}/commit/${payload.sha}|${shortSha(payload.sha)}>`;
   const done = environments.filter(environment => environment.state === "SUCCEEDED").length;
   const failed = environments.filter(environment => environment.state === "FAILED").length;
   const progress = `${done}/${environments.length} done${failed > 0 ? `, ${failed} failed` : ""}`;
