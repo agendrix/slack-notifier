@@ -2,6 +2,11 @@ import { GITHUB_TOKEN } from "./env";
 import { Octokit } from "@octokit/rest";
 
 const SHORT_SHA_LENGTH = 7;
+const JIRA_CARDS_PREFIX = /^(\[[A-Z]+-\d+\]\s*)+/;
+
+/** The Jira card is already in the PR, so the Slack line keeps only what changed. */
+export const formatCommitTitle = (message: string) =>
+  message.split("\n")[0].replace(JIRA_CARDS_PREFIX, "").replace(/</g, "«").replace(/>/g, "»");
 
 type CommitComparison = {
   authorName: string;
@@ -50,10 +55,7 @@ export class GithubWrapper {
     const authorName: string = refCommit.commit.author.name;
 
     const changelog = compare.data.commits.map(commit => {
-      const commitMessage = commit.commit.message.split("\n")[0];
-      const cleanedMessaged = commitMessage.replace(/</g, "«").replace(/>/g, "»");
-      const commitUrl = commit.html_url;
-      return `<${commitUrl}|${cleanedMessaged}>`;
+      return `<${commit.html_url}|${formatCommitTitle(commit.commit.message)}>`;
     });
 
     return {

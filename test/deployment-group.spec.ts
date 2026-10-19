@@ -18,6 +18,7 @@ import { mock } from "./mocks/libs/constants";
 
 import { __test__ } from "../lambda/index";
 import { __test__ as deploymentGroup, DeploymentGroupPayload } from "../lambda/deployment-group";
+import { formatCommitTitle } from "../lambda/github";
 
 const SHA = mock.commits.head.ref;
 const NEWER_SHA = "9f3c2a1b8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b";
@@ -324,6 +325,19 @@ describe("Deployment groups", () => {
       );
       assert.ok(bodyOf(message).includes(`✅ <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
       assert.ok(message.text!.includes("1/2 done, 1 failed"));
+    });
+  });
+
+  describe("commit titles", () => {
+    it("drops the Jira cards in front of the subject and keeps only its first line", () => {
+      assert.strictEqual(
+        formatCommitTitle("[BUGS-1480] [PNW-25] Hide restricted profile fields (#10953)\n\nBody"),
+        "Hide restricted profile fields (#10953)"
+      );
+    });
+
+    it("keeps a card that is not a prefix and escapes Slack's link brackets", () => {
+      assert.strictEqual(formatCommitTitle("Revert <fix> for [BUGS-1]"), "Revert «fix» for [BUGS-1]");
     });
   });
 
