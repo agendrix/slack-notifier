@@ -18,6 +18,7 @@ import { mock } from "./mocks/libs/constants";
 
 import { __test__ } from "../lambda/index";
 import { __test__ as deploymentGroup, DeploymentGroupPayload } from "../lambda/deployment-group";
+import { formatCommitTitle } from "../lambda/github";
 
 const SHA = mock.commits.head.ref;
 const NEWER_SHA = "9f3c2a1b8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b";
@@ -53,6 +54,7 @@ const onlyGroupMessage = () => {
   return messages[0];
 };
 const bodyOf = (message: { attachments?: any[] }) => message.attachments![0].text as string;
+const footerOf = (message: { attachments?: any[] }) => message.attachments![0].footer as string;
 
 const otherEnvironmentPayload = (group: DeploymentGroup, sha = SHA) => ({
   key: `${mock.repo.owner}/${mock.repo.name}/${sha}/${group}`,
@@ -78,11 +80,13 @@ describe("Deployment groups", () => {
 
     const message = onlyGroupMessage();
     assert.strictEqual(message.channel, mock.slackConfig.channel);
-    assert.ok(message.text!.startsWith(":loading_fast: Deploying `266db80` to *production*"));
+    assert.ok(message.text!.startsWith(":loading_fast: Deploying <https://github.com/MockOwner/MockRepo/commit/266db80b3e2f1bdeb69ab403ff939da49c3daca3|266db80> to *production*"));
     assert.ok(bodyOf(message).includes("Mock of Head commit"));
-    assert.ok(bodyOf(message).includes(`:loading_fast: *${ENV}* · Started`));
-    assert.ok(bodyOf(message).includes("launched by @ericmatte"));
-    assert.ok(bodyOf(message).includes("<https://github.com/MockOwner/MockRepo/actions/runs/1001|run>"));
+    assert.ok(
+      bodyOf(message).includes(`• :loading-blue: <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `)
+    );
+    assert.ok(bodyOf(message).includes(": Started"));
+    assert.ok(footerOf(message).endsWith("|1 new commit> · launched by @ericmatte"));
   });
 
   it("joins the message another environment already posted", async () => {
@@ -98,8 +102,8 @@ describe("Deployment groups", () => {
 
     assert.strictEqual(calls.filter(call => call.method === "chat.postMessage").length, 0);
     const message = onlyGroupMessage();
-    assert.ok(bodyOf(message).includes("*staging-eu* · Started"));
-    assert.ok(bodyOf(message).includes(`*${ENV}* · Started`));
+    assert.ok(bodyOf(message).includes("|*staging-eu*> · 19:00: Started"));
+    assert.ok(bodyOf(message).includes(`|*${ENV}*> · `));
     assert.ok(message.text!.includes("0/2 done"));
   });
 
@@ -116,8 +120,8 @@ describe("Deployment groups", () => {
 
     assert.strictEqual(calls.filter(call => call.method === "chat.delete").length, 1);
     const message = onlyGroupMessage();
-    assert.ok(bodyOf(message).includes("*staging-eu* · Started"));
-    assert.ok(bodyOf(message).includes(`*${ENV}* · Started`));
+    assert.ok(bodyOf(message).includes("|*staging-eu*> · 19:00: Started"));
+    assert.ok(bodyOf(message).includes(`|*${ENV}*> · `));
   });
 
   it("writes again when another environment overwrote its update", async () => {
@@ -129,7 +133,7 @@ describe("Deployment groups", () => {
     });
 
     assert.strictEqual(calls.filter(call => call.method === "chat.update").length, 2);
-    assert.ok(bodyOf(onlyGroupMessage()).includes(`*${ENV}* · Post-migrations`));
+    assert.ok(bodyOf(onlyGroupMessage()).includes(`: Post-migrations`));
   });
 
   it("writes again when another environment overwrote it right after the check", async () => {
@@ -147,8 +151,8 @@ describe("Deployment groups", () => {
     await send(makeEvent({ state: "SUCCEEDED" }));
 
     const message = onlyGroupMessage();
-    assert.ok(message.text!.startsWith("✅ Deployed `266db80` to *production* · 1/1 done"));
-    assert.ok(bodyOf(message).includes(`✅ *${ENV}* · Finished`));
+    assert.strictEqual(message.text, "✅ Deployed <https://github.com/MockOwner/MockRepo/commit/266db80b3e2f1bdeb69ab403ff939da49c3daca3|266db80> to *production*");
+    assert.ok(bodyOf(message).includes(`✅ <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
     assert.strictEqual(message.attachments![0].color, deploymentGroup.COLORS_BY_STATUS.succeeded);
     assert.strictEqual(threadReplies().length, 0);
   });
@@ -159,8 +163,8 @@ describe("Deployment groups", () => {
     await send(makeEvent({ state: "FAILED", initiatorEmail: KNOWN_SLACK_USER.email }));
 
     const message = onlyGroupMessage();
-    assert.ok(message.text!.startsWith("❌ Deployed `266db80` to *production* · 0/1 done, 1 failed"));
-    assert.ok(bodyOf(message).includes(`❌ *${ENV}* · Failed at Post-migrations`));
+    assert.ok(message.text!.startsWith("❌ Deployed <https://github.com/MockOwner/MockRepo/commit/266db80b3e2f1bdeb69ab403ff939da49c3daca3|266db80> to *production* · 0/1 done, 1 failed"));
+    assert.ok(bodyOf(message).includes(`: Failed at Post-migrations`));
 
     const replies = threadReplies();
     assert.strictEqual(replies.length, 1);
@@ -186,7 +190,7 @@ describe("Deployment groups", () => {
     await send(makeEvent({ state: "SKIPPED" }));
 
     const skipped = groupMessages().find(message => message.metadata!.event_payload.sha === SHA)!;
-    assert.ok(skipped.text!.startsWith("⏭️ Skipped `266db80` on *production* · replaced by `9f3c2a1`"));
+    assert.ok(skipped.text!.startsWith("⏭️ Skipped <https://github.com/MockOwner/MockRepo/commit/266db80b3e2f1bdeb69ab403ff939da49c3daca3|266db80> on *production* · replaced by `9f3c2a1`"));
     assert.strictEqual(skipped.attachments![0].color, deploymentGroup.COLORS_BY_STATUS.skipped);
   });
 
@@ -194,7 +198,7 @@ describe("Deployment groups", () => {
     await send(makeEvent({}));
     await send(makeEvent({ state: "SKIPPED" }));
 
-    assert.ok(onlyGroupMessage().text!.startsWith("⏭️ Skipped `266db80` on *production* · nothing to deploy"));
+    assert.ok(onlyGroupMessage().text!.startsWith("⏭️ Skipped <https://github.com/MockOwner/MockRepo/commit/266db80b3e2f1bdeb69ab403ff939da49c3daca3|266db80> on *production* · nothing to deploy"));
   });
 
   describe("production", () => {
@@ -207,7 +211,7 @@ describe("Deployment groups", () => {
 
       const body = bodyOf(onlyGroupMessage());
       assert.ok(!body.includes("📦"));
-      assert.ok(body.includes("launched by @ageorgaris"));
+      assert.ok(footerOf(onlyGroupMessage()).endsWith("launched by @ageorgaris"));
       assert.ok(body.includes("Mock of Head commit"));
     });
 
@@ -229,7 +233,7 @@ describe("Deployment groups", () => {
         )
       );
       assert.ok(!body.includes("Mock of Head commit"));
-      assert.ok(body.includes(`✅ *${ENV}* · Finished`));
+      assert.ok(body.includes(`✅ <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
       assert.strictEqual(threadReplies().length, 0);
     });
 
@@ -280,10 +284,10 @@ describe("Deployment groups", () => {
       await send(staging({ state: "FAILED", initiatorEmail: KNOWN_SLACK_USER.email }));
 
       const message = onlyGroupMessage();
-      assert.ok(message.text!.startsWith("❌ Deployed `266db80` to *staging* · 0/1 done, 1 failed"));
+      assert.ok(message.text!.startsWith("❌ Deployed <https://github.com/MockOwner/MockRepo/commit/266db80b3e2f1bdeb69ab403ff939da49c3daca3|266db80> to *staging* · 0/1 done, 1 failed"));
       assert.ok(bodyOf(message).includes("Mock of Head commit"));
-      assert.ok(bodyOf(message).includes("merged by @ericmatte"));
-      assert.ok(bodyOf(message).includes(`❌ *${ENV}* · Failed `));
+      assert.ok(footerOf(message).endsWith("merged by @ericmatte"));
+      assert.ok(bodyOf(message).includes(`: Failed`));
       assert.ok(!bodyOf(message).includes("Failed at"));
 
       const replies = threadReplies();
@@ -300,7 +304,13 @@ describe("Deployment groups", () => {
           event_type: "deployment_group",
           event_payload: {
             ...otherEnvironmentPayload("staging"),
-            envs: { "staging-eu": { state: "FAILED", at: 0, runUrl: "https://github.com/MockOwner/MockRepo/actions/runs/2002" } },
+            envs: {
+              "staging-eu": {
+                state: "FAILED",
+                at: 0,
+                runUrl: "https://github.com/MockOwner/MockRepo/actions/runs/2002",
+              },
+            },
           },
         },
       });
@@ -308,9 +318,26 @@ describe("Deployment groups", () => {
       await send(staging({ state: "SUCCEEDED" }));
 
       const message = onlyGroupMessage();
-      assert.ok(bodyOf(message).includes("❌ *staging-eu* · Failed"));
-      assert.ok(bodyOf(message).includes(`✅ *${ENV}* · Finished`));
+      assert.ok(
+        bodyOf(message).includes(
+          "❌ <https://github.com/MockOwner/MockRepo/actions/runs/2002|*staging-eu*> · 19:00: Failed"
+        )
+      );
+      assert.ok(bodyOf(message).includes(`✅ <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
       assert.ok(message.text!.includes("1/2 done, 1 failed"));
+    });
+  });
+
+  describe("commit titles", () => {
+    it("drops the Jira cards in front of the subject and keeps only its first line", () => {
+      assert.strictEqual(
+        formatCommitTitle("[BUGS-1480] [PNW-25] Hide restricted profile fields (#10953)\n\nBody"),
+        "Hide restricted profile fields (#10953)"
+      );
+    });
+
+    it("keeps a card that is not a prefix and escapes Slack's link brackets", () => {
+      assert.strictEqual(formatCommitTitle("Revert <fix> for [BUGS-1]"), "Revert «fix» for [BUGS-1]");
     });
   });
 
@@ -323,16 +350,29 @@ describe("Deployment groups", () => {
         ...overrides,
       } as DeploymentGroupPayload);
 
-    it("shows five commits and links the rest", () => {
-      const body = deploymentGroup.renderGroupMessage(payload({})).attachments[0].text;
-      assert.ok(body.includes("<e|5>"));
-      assert.ok(body.includes("<https://github.com/compare|+2 more>"));
+    it("bullets each environment, links its run on its name and puts the time before the step", () => {
+      const envs = {
+        "production-ca": { state: "PRE_MIGRATIONS", at: Date.parse("2026-10-19T20:15:19Z"), runUrl: "https://run/1" },
+        "production-eu": { state: "SUCCEEDED", at: Date.parse("2026-10-19T20:21:02Z"), runUrl: "https://run/2" },
+      };
+      const body = deploymentGroup.renderGroupMessage(payload({ envs })).attachments[0].text;
+
+      assert.ok(body.includes("• :loading-blue: <https://run/1|*production-ca*> · 16:15: Pre-migrations"));
+      assert.ok(body.includes("• ✅ <https://run/2|*production-eu*> · 16:21: Finished"));
     });
 
-    it("counts the commits when all of them are shown", () => {
-      const body = deploymentGroup.renderGroupMessage(payload({ changelog: ["<a|1>"], totalCommits: 1 })).attachments[0]
-        .text;
-      assert.ok(body.includes("<https://github.com/compare|1 new commit>"));
+    it("links the commits past the fifth right under the list and counts them all in the footer", () => {
+      const [attachment] = deploymentGroup.renderGroupMessage(payload({})).attachments;
+      assert.ok(attachment.text.includes("<e|5>\n<https://github.com/compare|+2 more>"));
+      assert.ok(attachment.footer.startsWith("<https://github.com/compare|7 new commits>"));
+    });
+
+    it("counts the commits in the footer when all of them are shown", () => {
+      const [attachment] = deploymentGroup.renderGroupMessage(
+        payload({ changelog: ["<a|1>"], totalCommits: 1 })
+      ).attachments;
+      assert.strictEqual(attachment.footer, "<https://github.com/compare|1 new commit> · merged by @ericmatte");
+      assert.ok(!attachment.text.includes("new commit"));
     });
   });
 });

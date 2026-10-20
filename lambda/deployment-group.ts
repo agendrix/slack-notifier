@@ -75,7 +75,6 @@ const formatTime = (at: number) =>
     timeZone: TIME_ZONE,
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
     hour12: false,
   }).format(new Date(at));
 
@@ -215,7 +214,7 @@ function getGroupStatus(payload: DeploymentGroupPayload): GroupStatus {
 
 function renderTitle(payload: DeploymentGroupPayload, status: GroupStatus): string {
   const environments = Object.values(payload.envs);
-  const sha = `\`${shortSha(payload.sha)}\``;
+  const sha = `<https://github.com/${REPO.owner}/${REPO.name}/commit/${payload.sha}|${shortSha(payload.sha)}>`;
   const done = environments.filter(environment => environment.state === "SUCCEEDED").length;
   const failed = environments.filter(environment => environment.state === "FAILED").length;
   const progress = `${done}/${environments.length} done${failed > 0 ? `, ${failed} failed` : ""}`;
@@ -227,20 +226,20 @@ function renderTitle(payload: DeploymentGroupPayload, status: GroupStatus): stri
     return `⏭️ Skipped ${sha} on *${payload.group}* · ${reason}`;
   }
   if (!isEnded) return `:loading_fast: Deploying ${sha} to *${payload.group}* · ${progress}`;
-  return `${status === "failed" ? "❌" : "✅"} Deployed ${sha} to *${payload.group}* · ${progress}`;
+  if (status === "failed") return `❌ Deployed ${sha} to *${payload.group}* · ${progress}`;
+  return `✅ Deployed ${sha} to *${payload.group}*`;
 }
 
 function renderEnvironment(name: string, environment: EnvironmentState): string {
-  const run = `<${environment.runUrl}|run>`;
-  const time = formatTime(environment.at);
-  const lines: { [k in GithubActionsEventState]?: string } = {
-    SUCCEEDED: `✅ *${name}* · Finished ${time}`,
-    FAILED: `❌ *${name}* · Failed${environment.failedStep ? ` at ${environment.failedStep}` : ""} ${time}`,
-    STOPPED: `⏹️ *${name}* · Stopped ${time}`,
-    SKIPPED: `⏭️ *${name}* · Skipped ${time}`,
+  const failedStep = environment.failedStep ? ` at ${environment.failedStep}` : "";
+  const lines: { [k in GithubActionsEventState]?: [emoji: string, step: string] } = {
+    SUCCEEDED: ["✅", "Finished"],
+    FAILED: ["❌", `Failed${failedStep}`],
+    STOPPED: ["⏹️", "Stopped"],
+    SKIPPED: ["⏭️", "Skipped"],
   };
-  const line = lines[environment.state] || `:loading_fast: *${name}* · ${STEP_LABELS[environment.state]} ${time}`;
-  return `${line} · ${run}`;
+  const [emoji, step] = lines[environment.state] || [":loading-blue:", STEP_LABELS[environment.state]];
+  return `• ${emoji} <${environment.runUrl}|*${name}*> · ${formatTime(environment.at)}: ${step}`;
 }
 
 function renderRelease(release: ReleaseState): string {
@@ -252,27 +251,28 @@ function renderRelease(release: ReleaseState): string {
   return lines[release.state];
 }
 
-function renderCommitsLink(payload: DeploymentGroupPayload, isListed: boolean): string {
+function renderCommitsCount(payload: DeploymentGroupPayload, isListed: boolean): string {
   if (payload.totalCommits === 0) return "No code change";
-  if (!isListed) return `<${payload.compareUrl}|${pluralize(payload.totalCommits, "commit")}>`;
-  if (payload.totalCommits > payload.changelog.length) {
-    return `<${payload.compareUrl}|+${payload.totalCommits - payload.changelog.length} more>`;
-  }
-  return `<${payload.compareUrl}|${pluralize(payload.totalCommits, "new commit")}>`;
+  return `<${payload.compareUrl}|${pluralize(payload.totalCommits, isListed ? "new commit" : "commit")}>`;
+}
+
+function renderCommits(payload: DeploymentGroupPayload): string[] {
+  const hidden = payload.totalCommits - payload.changelog.length;
+  return [...payload.changelog, ...(hidden > 0 ? [`<${payload.compareUrl}|+${hidden} more>`] : [])];
 }
 
 function renderGroupMessage(payload: DeploymentGroupPayload) {
   const status = getGroupStatus(payload);
   const isCommitListed = payload.release?.state !== "published";
   const initiatorLabel = payload.group === "production" ? "launched by" : "merged by";
-  const context = [
-    renderCommitsLink(payload, isCommitListed),
+  /** Slack renders the footer as small grey text, with links but without bold. */
+  const footer = [
+    renderCommitsCount(payload, isCommitListed),
     ...(payload.initiator ? [`${initiatorLabel} @${payload.initiator}`] : []),
   ].join(" · ");
 
   const lines = [
-    ...(isCommitListed ? payload.changelog : []),
-    context,
+    ...(isCommitListed ? renderCommits(payload) : []),
     ...(payload.release ? [renderRelease(payload.release)] : []),
     ...Object.keys(payload.envs)
       .sort()
@@ -281,7 +281,7 @@ function renderGroupMessage(payload: DeploymentGroupPayload) {
 
   return {
     text: renderTitle(payload, status),
-    attachments: [{ color: COLORS_BY_STATUS[status], text: lines.join("\n"), mrkdwn_in: ["text"] }],
+    attachments: [{ color: COLORS_BY_STATUS[status], text: lines.join("\n"), footer, mrkdwn_in: ["text"] }],
     metadata: { event_type: EVENT_TYPE, event_payload: payload },
   };
 }
