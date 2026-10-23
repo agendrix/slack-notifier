@@ -1,6 +1,6 @@
 import * as aws from "./aws";
 import * as slack from "./slack";
-import { Context, Callback, APIGatewayProxyStructuredResultV2 } from "aws-lambda";
+import { Context, APIGatewayProxyStructuredResultV2 } from "aws-lambda";
 import { COLORS, WorkflowState } from "./constants";
 import { ENV, REPO, API_SECRET, SLACK_CONFIG } from "./env";
 import { handleDeploymentGroupEvent } from "./deployment-group";
@@ -27,8 +27,6 @@ const STATE_MESSAGES: { [k in keyof typeof WorkflowState]: [color: string, getSt
 
 const ENDING_STATES: WorkflowState[] = [WorkflowState.finished, WorkflowState.stopped, WorkflowState.failed, WorkflowState.skipped];
 
-let lambdaCallback: Callback<LambdaResponse> | undefined = undefined;
-
 function sendResponse(message: string, statusCode: number): LambdaResponse {
   const response: LambdaResponse = {
     statusCode,
@@ -36,13 +34,10 @@ function sendResponse(message: string, statusCode: number): LambdaResponse {
     headers: { "Content-Type": "text/html; charset=utf-8" },
     isBase64Encoded: false,
   };
-  lambdaCallback?.(null, response);
   return response;
 }
 
-async function handler(event: any, _context: Context | null, callback?: Callback): Promise<LambdaResponse> {
-  lambdaCallback = callback;
-
+async function handler(event: any, context: Context | null): Promise<LambdaResponse> {
   try {
     if (isSupportedHTTPLambdaRequest(event)) {
       if (!API_SECRET) throw new Error("API_SECRET is required for api calls");
@@ -117,7 +112,10 @@ async function handler(event: any, _context: Context | null, callback?: Callback
     return sendResponse("ok", 204);
   } catch (error) {
     console.error(error);
-    return sendResponse("Internal server error", 500);
+    // The full error stays in CloudWatch. Return only the request id so a
+    // caller can find it there, never the message itself: it can carry the
+    // Slack token or other config, and the caller logs this body verbatim.
+    return sendResponse(`Internal server error (request ${context?.awsRequestId ?? "unknown"})`, 500);
   }
 }
 
