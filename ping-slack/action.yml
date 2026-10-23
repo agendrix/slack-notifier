@@ -33,5 +33,5 @@ inputs:
     description: For "RELEASE_PUBLISHED" state, the name of the published GitHub release
     required: false
 runs:
-  using: node20
+  using: node24
   main: dist/index.js
