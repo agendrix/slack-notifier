@@ -85,7 +85,7 @@ describe("Deployment groups", () => {
     assert.ok(
       bodyOf(message).includes(`• :loading-blue: <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `)
     );
-    assert.ok(bodyOf(message).includes(": Started"));
+    assert.ok(bodyOf(message).includes("` Started"));
     assert.ok(footerOf(message).endsWith("|1 new commit> · launched by @ericmatte"));
   });
 
@@ -102,7 +102,7 @@ describe("Deployment groups", () => {
 
     assert.strictEqual(calls.filter(call => call.method === "chat.postMessage").length, 0);
     const message = onlyGroupMessage();
-    assert.ok(bodyOf(message).includes("|*staging-eu*> · 19:00: Started"));
+    assert.ok(bodyOf(message).includes("|*staging-eu*> · `19:00` Started"));
     assert.ok(bodyOf(message).includes(`|*${ENV}*> · `));
     assert.ok(message.text!.includes("0/2 done"));
   });
@@ -120,7 +120,7 @@ describe("Deployment groups", () => {
 
     assert.strictEqual(calls.filter(call => call.method === "chat.delete").length, 1);
     const message = onlyGroupMessage();
-    assert.ok(bodyOf(message).includes("|*staging-eu*> · 19:00: Started"));
+    assert.ok(bodyOf(message).includes("|*staging-eu*> · `19:00` Started"));
     assert.ok(bodyOf(message).includes(`|*${ENV}*> · `));
   });
 
@@ -133,7 +133,7 @@ describe("Deployment groups", () => {
     });
 
     assert.strictEqual(calls.filter(call => call.method === "chat.update").length, 2);
-    assert.ok(bodyOf(onlyGroupMessage()).includes(`: Post-migrations`));
+    assert.ok(bodyOf(onlyGroupMessage()).includes("` Post-migrations"));
   });
 
   it("writes again when another environment overwrote it right after the check", async () => {
@@ -152,7 +152,7 @@ describe("Deployment groups", () => {
 
     const message = onlyGroupMessage();
     assert.strictEqual(message.text, "✅ Deployed <https://github.com/MockOwner/MockRepo/commit/266db80b3e2f1bdeb69ab403ff939da49c3daca3|266db80> to *production*");
-    assert.ok(bodyOf(message).includes(`✅ <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
+    assert.ok(bodyOf(message).includes(`✔️ <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
     assert.strictEqual(message.attachments![0].color, deploymentGroup.COLORS_BY_STATUS.succeeded);
     assert.strictEqual(threadReplies().length, 0);
   });
@@ -164,7 +164,7 @@ describe("Deployment groups", () => {
 
     const message = onlyGroupMessage();
     assert.ok(message.text!.startsWith("❌ Deployed <https://github.com/MockOwner/MockRepo/commit/266db80b3e2f1bdeb69ab403ff939da49c3daca3|266db80> to *production* · 0/1 done, 1 failed"));
-    assert.ok(bodyOf(message).includes(`: Failed at Post-migrations`));
+    assert.ok(bodyOf(message).includes("` Failed at Post-migrations"));
 
     const replies = threadReplies();
     assert.strictEqual(replies.length, 1);
@@ -233,7 +233,7 @@ describe("Deployment groups", () => {
         )
       );
       assert.ok(!body.includes("Mock of Head commit"));
-      assert.ok(body.includes(`✅ <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
+      assert.ok(body.includes(`✔️ <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
       assert.strictEqual(threadReplies().length, 0);
     });
 
@@ -287,7 +287,7 @@ describe("Deployment groups", () => {
       assert.ok(message.text!.startsWith("❌ Deployed <https://github.com/MockOwner/MockRepo/commit/266db80b3e2f1bdeb69ab403ff939da49c3daca3|266db80> to *staging* · 0/1 done, 1 failed"));
       assert.ok(bodyOf(message).includes("Mock of Head commit"));
       assert.ok(footerOf(message).endsWith("merged by @ericmatte"));
-      assert.ok(bodyOf(message).includes(`: Failed`));
+      assert.ok(bodyOf(message).includes("` Failed"));
       assert.ok(!bodyOf(message).includes("Failed at"));
 
       const replies = threadReplies();
@@ -320,10 +320,10 @@ describe("Deployment groups", () => {
       const message = onlyGroupMessage();
       assert.ok(
         bodyOf(message).includes(
-          "❌ <https://github.com/MockOwner/MockRepo/actions/runs/2002|*staging-eu*> · 19:00: Failed"
+          "❌ <https://github.com/MockOwner/MockRepo/actions/runs/2002|*staging-eu*> · `19:00` Failed"
         )
       );
-      assert.ok(bodyOf(message).includes(`✅ <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
+      assert.ok(bodyOf(message).includes(`✔️ <https://github.com/MockOwner/MockRepo/actions/runs/1001|*${ENV}*> · `));
       assert.ok(message.text!.includes("1/2 done, 1 failed"));
     });
   });
@@ -357,8 +357,30 @@ describe("Deployment groups", () => {
       };
       const body = deploymentGroup.renderGroupMessage(payload({ envs })).attachments[0].text;
 
-      assert.ok(body.includes("• :loading-blue: <https://run/1|*production-ca*> · 16:15: Pre-migrations"));
-      assert.ok(body.includes("• ✅ <https://run/2|*production-eu*> · 16:21: Finished"));
+      assert.ok(body.includes("• :loading-blue: <https://run/1|*production-ca*> · `16:15` Pre-migrations"));
+      assert.ok(body.includes("• ✔️ <https://run/2|*production-eu*> · `16:21` Finished"));
+    });
+
+    it("separates the commits from the environments with a blank line", () => {
+      const envs = { "production-ca": { state: "SUCCEEDED", at: 0, runUrl: "https://run/1" } };
+      const body = deploymentGroup.renderGroupMessage(payload({ envs })).attachments[0].text;
+
+      assert.ok(body.includes("<https://github.com/compare|+2 more>\n\n• ✔️ <https://run/1|*production-ca*>"));
+    });
+
+    it("separates the release from the environments with a blank line", () => {
+      const envs = { "production-ca": { state: "SUCCEEDED", at: 0, runUrl: "https://run/1" } };
+      const release = { state: "published", name: "16 oct. 2026, 11h11", url: "https://release" };
+      const body = deploymentGroup.renderGroupMessage(payload({ envs, release })).attachments[0].text;
+
+      assert.ok(body.startsWith("📦 Release <https://release|*16 oct. 2026, 11h11*>\n\n• ✔️ <https://run/1|*production-ca*>"));
+    });
+
+    it("starts with the environments when there are no commits to list", () => {
+      const envs = { "production-ca": { state: "SUCCEEDED", at: 0, runUrl: "https://run/1" } };
+      const body = deploymentGroup.renderGroupMessage(payload({ envs, changelog: [], totalCommits: 0 })).attachments[0].text;
+
+      assert.ok(body.startsWith("• ✔️ <https://run/1|*production-ca*>"));
     });
 
     it("links the commits past the fifth right under the list and counts them all in the footer", () => {

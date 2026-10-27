@@ -233,13 +233,13 @@ function renderTitle(payload: DeploymentGroupPayload, status: GroupStatus): stri
 function renderEnvironment(name: string, environment: EnvironmentState): string {
   const failedStep = environment.failedStep ? ` at ${environment.failedStep}` : "";
   const lines: { [k in GithubActionsEventState]?: [emoji: string, step: string] } = {
-    SUCCEEDED: ["✅", "Finished"],
+    SUCCEEDED: ["✔️", "Finished"],
     FAILED: ["❌", `Failed${failedStep}`],
     STOPPED: ["⏹️", "Stopped"],
     SKIPPED: ["⏭️", "Skipped"],
   };
   const [emoji, step] = lines[environment.state] || [":loading-blue:", STEP_LABELS[environment.state]];
-  return `• ${emoji} <${environment.runUrl}|*${name}*> · ${formatTime(environment.at)}: ${step}`;
+  return `• ${emoji} <${environment.runUrl}|*${name}*> · \`${formatTime(environment.at)}\` ${step}`;
 }
 
 function renderRelease(release: ReleaseState): string {
@@ -271,17 +271,21 @@ function renderGroupMessage(payload: DeploymentGroupPayload) {
     ...(payload.initiator ? [`${initiatorLabel} @${payload.initiator}`] : []),
   ].join(" · ");
 
-  const lines = [
+  const summary = [
     ...(isCommitListed ? renderCommits(payload) : []),
     ...(payload.release ? [renderRelease(payload.release)] : []),
-    ...Object.keys(payload.envs)
-      .sort()
-      .map(name => renderEnvironment(name, payload.envs[name])),
   ];
+  const environments = Object.keys(payload.envs)
+    .sort()
+    .map(name => renderEnvironment(name, payload.envs[name]));
+  const text = [summary, environments]
+    .filter(section => section.length > 0)
+    .map(section => section.join("\n"))
+    .join("\n\n");
 
   return {
     text: renderTitle(payload, status),
-    attachments: [{ color: COLORS_BY_STATUS[status], text: lines.join("\n"), footer, mrkdwn_in: ["text"] }],
+    attachments: [{ color: COLORS_BY_STATUS[status], text, footer, mrkdwn_in: ["text"] }],
     metadata: { event_type: EVENT_TYPE, event_payload: payload },
   };
 }
